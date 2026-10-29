@@ -55,11 +55,25 @@ h2{display:flex;align-items:center;gap:10px;letter-spacing:.02em}h2::after{conte
 .nav button span{font-size:20px;line-height:1.1}
 .nav button.on{box-shadow:0 0 14px color-mix(in srgb,var(--accent) 55%,transparent)}
 .over{background:radial-gradient(ellipse at center,rgba(60,15,10,.85),rgba(8,4,2,.95))}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 2px}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;background:var(--panel);border:1px solid var(--line);font-size:13px}
+.chip i{width:10px;height:10px;border-radius:50%;display:inline-block}
+.chip.gold{border-color:#ffd23f;box-shadow:0 0 10px rgba(255,210,63,.45)}
+.card.info:not(:disabled){border-color:var(--line);cursor:default}
+.intro{position:fixed;inset:0;background:rgba(10,6,3,.82);display:none;align-items:center;justify-content:center;padding:18px;z-index:30}
+.intro.on{display:flex}
+.icard{background:var(--panel);color:var(--ink);border:2px solid var(--accent);border-radius:18px;max-width:420px;width:100%;padding:18px 18px 14px;box-shadow:0 20px 50px rgba(0,0,0,.5);max-height:86vh;overflow:auto}
+.icard h3{font:700 22px "Bricolage Grotesque",system-ui,sans-serif;margin:0 0 8px}
+.icard p{margin:0 0 10px}
+.idots{display:flex;gap:6px;justify-content:center;margin:10px 0}
+.idots i{width:8px;height:8px;border-radius:50%;background:var(--line)}
+.idots i.on{background:var(--accent)}
+.irow{display:flex;gap:8px}.irow .card{margin:0;justify-content:center;flex:1}
 </style></head>
-<body><main>
+<body><noscript><p style="padding:16px">This game needs JavaScript. Open the file in Safari or Chrome rather than a message or email preview.</p></noscript><main>
 <div class="top">
  <div><div class="big" id="ants">0</div><div class="mute">ants</div></div>
- <div style="text-align:right"><div class="big" style="font-size:22px" id="aps">0</div><div class="mute">food</div><button class="link" id="snd" style="margin:0;padding:4px 0">Sound on</button></div>
+ <div style="text-align:right"><div class="big" style="font-size:22px" id="aps">0</div><div class="mute">food · <b id="jel">0</b> jelly</div><button class="link" id="snd" style="margin:0;padding:4px 0">Sound on</button> <button class="link" id="help" style="margin:0 0 0 10px;padding:4px 0">How to play</button></div>
 </div>
 <div class="row" style="margin:0 0 4px"><span class="mute" id="tpl"></span></div><div class="bar" style="margin-bottom:8px"><i id="tpb" style="background:var(--accent)"></i></div>
 <div class="scene" id="view"><canvas id="cv" role="img" aria-label="Your ant colony underground"></canvas></div>
@@ -67,13 +81,16 @@ h2{display:flex;align-items:center;gap:10px;letter-spacing:.02em}h2::after{conte
 <div class="pn on" id="p-nest">
  <div class="row"><b>Queen’s health</b><span id="hpt"></span></div><div class="bar"><i id="hpb" style="background:#c0452d"></i></div>
  <div class="row"><b>Next egg</b><span id="stt"></span></div><div class="bar"><i id="stb" style="background:#6fbf4a"></i></div>
+ <div class="mute" style="margin-top:12px">Egg chances</div><div class="chips" id="chance"></div>
  <button class="card dig" id="feed"></button>
  <p class="mute" id="hint"></p>
+ <p id="goal" style="margin:0 0 4px;padding:8px 10px;border-left:3px solid var(--accent);background:var(--panel);border-radius:8px"></p>
 </div>
-<div class="pn" id="p-tun"><p id="tst" style="margin:12px 0 4px"></p><p class="mute" id="tdf" style="margin:0"></p></div>
+<div class="pn" id="p-tun"><p id="tst" style="margin:12px 0 4px"></p><p class="mute" id="tdf" style="margin:0 0 4px"></p><p class="mute" id="tin" style="margin:0"></p>
+ <div style="display:flex;gap:6px;margin-top:6px"><button class="card" id="j0" style="margin:0;justify-content:center">Surface</button><button class="card" id="j1" style="margin:0;justify-content:center">Front line</button><button class="card" id="j2" style="margin:0;justify-content:center">Nest</button></div></div>
 <div class="pn" id="p-col">
  <h2>Dig deeper</h2><div id="tier"></div>
- <h2>Roles</h2><div id="bl"></div>
+ <h2>Chambers</h2><p class="mute" id="rooms" style="margin:0 0 4px"></p><h2>Your ants and queen</h2><p class="mute" style="margin:0 0 4px">Tap a card to level it up with royal jelly. Jelly comes from cleared waves, bosses, scout finds, milestones and golden eggs.</p><div id="bl"></div>
  <h2>Upgrades</h2><div id="ul"></div>
  <h2>Royal flight</h2><p class="mute" id="prinfo" style="margin:0"></p><div id="pr"></div>
  <button class="link" id="reset">Erase everything</button>
@@ -81,36 +98,21 @@ h2{display:flex;align-items:center;gap:10px;letter-spacing:.02em}h2::after{conte
 </main>
 <nav class="nav"><button data-t="nest" class="on"><span>🐜</span>Nest</button><button data-t="tun"><span>🕳️</span>Tunnel</button><button data-t="col"><span>🍄</span>Colony</button></nav>
 <div class="over" id="over"><h2 style="font-size:32px;margin:0">The nest has fallen</h2><p id="overp" style="max-width:320px"></p><button class="card dig" id="again"><b>Found a new colony</b></button></div>
+<div class="intro" id="intro" role="dialog" aria-modal="true"><div class="icard"><div id="ipg"></div><div class="idots" id="idots"></div><div class="irow"><button class="card" id="iback">Back</button><button class="card dig" id="inext">Next</button></div></div></div>
 <div class="toast" id="toast"></div>
 
-<script>
+<script>/* THE COLONY - checkpoint. Sections: data, sound, ui, world art, game logic, save, then upgrades layered on top (classes, art pass, zoom). */
+
 var $=function(i){return document.getElementById(i)};
+window.onerror=function(m,s,l){var d=document.createElement('div');d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:99;background:#7a1f12;color:#fff;padding:8px 12px;font:13px system-ui';d.textContent='The Colony hit an error: '+m+' (line '+l+'). Please screenshot this and send it to the developer.';document.body.appendChild(d)};
 /* ---------- data ---------- */
-var B=[
- {id:'nurse',n:'Nurse ants',d:'Tend eggs. 0.025 ants/s each.',c:15,r:.025,t:0},
- {id:'forager',n:'Foragers',d:'0.1 ants/s, plus 0.15 food/s once the tunnel is open.',c:120,r:.1,t:0},
- {id:'soldier',n:'Soldiers',d:'Defend the nest. 3 damage/s each.',c:60,r:0,t:0,g:1.14},
- {id:'garden',n:'Fungus gardens',d:'1.5 ants/s each.',c:1600,r:1.5,t:1},
- {id:'brood',n:'Brood halls',d:'10 ants/s each.',c:20000,r:10,t:2},
- {id:'vault',n:'Jelly vaults',d:'55 ants/s each.',c:260000,r:55,t:3}];
 var T=[{n:'Dirt hole',c:0},{n:'Burrow',c:1500},{n:'Colony',c:20000},{n:'Anthill',c:200000},{n:'Supercolony',c:1000000}];
-var U=[
- {id:'mand',n:'Strong mandibles',d:'Tapping the queen lays twice as many eggs.',c:150,t:'click',m:2},
- {id:'armor',n:'Chitin armor',d:'Invaders steal 30% fewer ants.',c:400,t:'armor',m:.7},
- {id:'larvae',n:'Well-fed larvae',d:'Nurse ants work twice as fast.',c:800,t:'nurse',m:2},
- {id:'venom',n:'Venom sacs',d:'Soldiers deal double damage.',c:1200,t:'soldier',m:2},
- {id:'trails',n:'Pheromone trails',d:'Foragers work twice as fast.',c:3500,t:'forager',m:2},
- {id:'sentry',n:'Sentry ants',d:'Invaders crawl 35% slower.',c:6000,t:'slow',m:.65},
- {id:'compost',n:'Leaf compost',d:'Fungus gardens produce twice as much.',c:40000,t:'garden',m:2},
- {id:'guard',n:'Royal guard',d:'The queen takes half damage.',c:30000,t:'guard',m:.5},
- {id:'incub',n:'Warm incubators',d:'Brood halls produce twice as much.',c:500000,t:'brood',m:2},
- {id:'jelly',n:'Queen’s blessing',d:'Every ant works 50% harder.',c:2500000,t:'all',m:1.5}];
+var U=[];
 var LG=[
  {id:'swift',n:'Swift diggers',d:'Tunnels dig 50% faster per level.'},
  {id:'found',n:'Founding brood',d:'Start each colony with 3 more nurses per level.'},
  {id:'hardy',n:'Hardy eggs',d:'Soldiers deal 15% more per level.'},
  {id:'fat',n:'Rich larder',d:'Feeding the queen costs 15% less per level.'}];
-function fresh(){return {a:0,tot:0,cnt:{},up:{},tier:0,dg:0,fd:0,st:1,fed:0,hp:100,wv:0,t:Date.now()}}
 var S=fresh(),P={lp:0,ev:0,pk:{}},mut=false,dead=false;
 function pk(i){return P.pk[i]||0}
 function fmt(n){if(n<1000)return n<10&&n%1?n.toFixed(n<1?2:1):Math.floor(n).toString();
@@ -118,12 +120,7 @@ function fmt(n){if(n<1000)return n<10&&n%1?n.toFixed(n<1?2:1):Math.floor(n).toSt
  return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+s[i]}
 function cost(b){return Math.ceil(b.c*Math.pow(b.g||1.25,S.cnt[b.id]||0))}
 function um(t){var m=1;U.forEach(function(u){if(S.up[u.id]&&u.t===t)m*=u.m});return m}
-function raw(){var s=0;B.forEach(function(b){s+=(S.cnt[b.id]||0)*b.r*um(b.id)});return s*Math.pow(1.6,S.tier)*um('all')*(1+.08*P.ev)}
-function aps(){return raw()*(S.st>0?1:.25)*(S.fed>0?1.5:1)}
-function power(){return (1+aps()*.03)*um('click')*Math.pow(1.6,S.tier)}
 function feedCost(){return Math.ceil(10*Math.pow(1.4,S.tier)*(1-.15*pk('fat')))}
-function dps(){return (5+(S.cnt.soldier||0)*3*um('soldier'))*(1+.15*pk('hardy'))}
-function gain(){return Math.floor(Math.sqrt(S.tot/20000))}
 function add(n){S.a+=n;S.tot+=n}
 
 /* ---------- sound and haptics ---------- */
@@ -148,18 +145,14 @@ var SFX={
 /* ---------- ui building ---------- */
 function toast(m){var t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(toast.h);toast.h=setTimeout(function(){t.classList.remove('on')},3400)}
 function card(par,id,fn){var b=document.createElement('button');b.className='card';b.id=id;b.onclick=fn;par.appendChild(b);return b}
-B.forEach(function(b){card($('bl'),'b-'+b.id,function(){buy(b)})});
 card($('tier'),'tierbtn',function(){dig()}).classList.add('dig');
 U.forEach(function(u){card($('ul'),'u-'+u.id,function(){upg(u)})});
 var fly=card($('pr'),'fly',function(){royal()});fly.classList.add('dig');
 LG.forEach(function(l){card($('pr'),'l-'+l.id,function(){perk(l)})});
 function buy(b){var c=cost(b);if(S.a<c||S.tier<b.t)return;S.a-=c;S.cnt[b.id]=(S.cnt[b.id]||0)+1;SFX.buy();sync()}
-function upg(u){if(S.up[u.id]||S.a<u.c)return;S.a-=u.c;S.up[u.id]=1;SFX.buy()}
-function dig(){var n=T[S.tier+1];if(!n||S.a<n.c)return;S.a-=n.c;S.tier++;SFX.win();toast('Your nest is now a '+n.n+'. Ants work 60% harder.')}
 function perk(l){var lv=pk(l.id),c=(lv+1)*2;if(lv>=5||P.lp<c)return;P.lp-=c;P.pk[l.id]=lv+1;SFX.buy()}
 function feed(){var c=feedCost();if(S.fd<c||dead)return;S.fd-=c;S.st=1;S.fed=20;SFX.feed();
  for(var i=0;i<8;i++)fx.push({x:QX+Math.random()*60-30,y:QY-50,vx:0,vy:20,l:.9,t:'\ud83c\udf43',f:14,g:0})}
-$('feed').onclick=feed;
 function newRun(lp){P.lp+=lp;P.ev+=lp;S=fresh();S.cnt.nurse=3*pk('found');foes=[];wvi={n:0};nf=0;dead=false;$('over').classList.remove('on');marchers.length=0;sync();save()}
 function royal(){var g=gain();if(g<1)return;newRun(g);toast('A new queen founds a colony. Legacy +'+g+'.');SFX.win()}
 $('again').onclick=function(){newRun(Math.floor(gain()/2))};
@@ -172,86 +165,34 @@ function go(t){tab=t;['nest','tun','col'].forEach(function(x){$('p-'+x).classLis
  $('view').style.display=t==='col'?'none':'';if(t!=='col'){sizeT();camT=t==='tun'?0:WH-H}tn(400,.05,'square',.05)}
 document.querySelectorAll('.nav button').forEach(function(b){b.onclick=function(){go(b.dataset.t)}});
 
-function ui(){
- $('ants').textContent=fmt(S.a);$('aps').textContent=fmt(aps());
- $('hpt').textContent=Math.ceil(S.hp)+' / 100';$('hpb').style.width=Math.max(0,S.hp)+'%';
- $('stb').style.width=(S.st*100)+'%';$('stt').textContent=S.st<=0?'Starving':S.fed>0?'Well fed '+Math.ceil(S.fed)+'s':Math.ceil(S.st*80)+'s left';
- var fc=feedCost();$('feed').innerHTML='<span><b>Feed the queen</b><span class="mute">Costs '+fc+' food. Fills her up and boosts ants by 50% for 20s.</span></span><span class="r"><span class="own">'+Math.floor(S.fd)+'</span><br>food</span>';$('feed').disabled=S.fd<fc||dead;
- $('hint').textContent=S.dg<1?'Tap the queen to lay eggs. Your ants are digging toward the surface.':S.st<=0?'The queen is starving. Feed her before she weakens.':'Tap the queen to lay eggs. Foragers bring food in through the tunnel.';
- $('tst').innerHTML=S.dg<1?'Your ants are digging up toward the surface: <b>'+Math.floor(S.dg*100)+'%</b>':foes.length?'<b>Invaders in the tunnel: '+foes.length+'</b>':'The tunnel is open. Next wave soon.';
- $('tdf').textContent='Defense: '+fmt(dps())+' damage/s from '+(S.cnt.soldier||0)+' soldiers. Wave '+(S.wv+1)+' is next.';
- B.forEach(function(b){var el=$('b-'+b.id),lk=S.tier<b.t,c=cost(b);
-  el.innerHTML='<span><b>'+b.n+'</b><span class="mute">'+b.d+'</span></span><span class="r"><span class="own">'+(S.cnt[b.id]||0)+'</span><br>'+(lk?'Needs '+T[b.t].n:fmt(c)+' ants')+'</span>';el.disabled=lk||S.a<c});
- var nt=T[S.tier+1],tb=$('tierbtn');
- if(nt){tb.innerHTML='<span><b>Become a '+nt.n+'</b><span class="mute">+60% ants, a new chamber, new ant types.</span></span><span class="r">'+fmt(nt.c)+' ants</span>';tb.disabled=S.a<nt.c}
- else{tb.innerHTML='<span><b>Supercolony reached</b><span class="mute">Take a royal flight to grow even stronger.</span></span>';tb.disabled=true}
- U.forEach(function(u){var el=$('u-'+u.id);if(S.up[u.id]){el.style.display='none';return}
-  el.style.display='';el.innerHTML='<span><b>'+u.n+'</b><span class="mute">'+u.d+'</span></span><span class="r">'+fmt(u.c)+' ants</span>';el.disabled=S.a<u.c});
- var g=gain();$('prinfo').textContent='A new queen restarts your colony. You keep legacy points, which power up every future colony. Legacy: '+P.lp+' to spend, +'+Math.round(8*P.ev)+'% ants per second.';
- fly.innerHTML='<span><b>Royal flight</b><span class="mute">'+(g>=1?'Found a new colony and earn '+g+' legacy.':'Hatch 20K ants in one colony to earn legacy.')+'</span></span>';fly.disabled=g<1;
- LG.forEach(function(l){var el=$('l-'+l.id),lv=pk(l.id),c=(lv+1)*2;
-  el.innerHTML='<span><b>'+l.n+' '+lv+'/5</b><span class="mute">'+l.d+'</span></span><span class="r">'+(lv>=5?'Maxed':c+' legacy')+'</span>';el.disabled=lv>=5||P.lp<c})}
 
 /* ---------- world ---------- */
 var cv=$('cv'),cx=cv.getContext('2d'),W=320,H=267,WH=534,K=1.1,dpr=1,cam=0,PT=[],CUM=[],LEN=0,pebs=[],marchers=[],fx=[],foes=[],wvi={n:0},nf=0,QX=160,QY=480,pulse=0,shake=0,lastP=0,dtip=0;
 var PN=[[.22,.05],[.22,.13],[.75,.21],[.8,.3],[.25,.38],[.22,.5],[.75,.58],[.7,.7],[.5,.88]];
-var FN=['beetle','spider','wasp'],IC=['\ud83c\udf44','\ud83e\udd5a','\ud83c\udf6f','\ud83d\udc51'],CI=[6,7,5,4];
+var FN=['beetle','spider','wasp'],IC=['','','',''],CI=[6,7,5,4];
 var still=window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches;
-function sizeT(){dpr=window.devicePixelRatio||1;var cw=cv.clientWidth||320;W=cw/K;H=400/K;WH=H*2;cv.width=cw*dpr;cv.height=400*dpr;
- PT=PN.map(function(p){return [p[0]*W,p[1]*WH]});CUM=[0];LEN=0;
- for(var i=1;i<PT.length;i++){LEN+=Math.hypot(PT[i][0]-PT[i-1][0],PT[i][1]-PT[i-1][1]);CUM.push(LEN)}
- var f=PT[PT.length-1];QX=f[0];QY=f[1];
- pebs=[];for(var k=0;k<120;k++)pebs.push([Math.random()*W,24+Math.random()*WH,1+Math.random()*2.5,Math.random()]);camT=tab==='tun'?0:WH-H;cam=camT}
-function at(p){p=Math.max(0,Math.min(1,p));var d=p*LEN,i=1;while(i<CUM.length-1&&CUM[i]<d)i++;var a=PT[i-1],b=PT[i],t=Math.max(0,Math.min(1,(d-CUM[i-1])/((CUM[i]-CUM[i-1])||1))),dx=b[0]-a[0],dy=b[1]-a[1],l=Math.hypot(dx,dy)||1;
- return {x:a[0]+dx*t,y:a[1]+dy*t,nx:-dy/l,ny:dx/l,ang:Math.atan2(dy,dx)}}
-function drawAnt(x,y,ang,sz,leaf,ph,kd){cx.save();cx.translate(x,y);cx.rotate(ang);
- cx.strokeStyle='#150c07';cx.lineWidth=1;cx.beginPath();
- for(var j=-1;j<=1;j++){var w=Math.sin(ph+j*2)*sz*.25;cx.moveTo(j*sz*.4,0);cx.lineTo(j*sz*.4+w,sz*.85);cx.moveTo(j*sz*.4,0);cx.lineTo(j*sz*.4-w,-sz*.85)}cx.stroke();
- cx.fillStyle=kd===1?'#a8301a':kd===3?'#4a2a14':'#2b1509';cx.beginPath();cx.ellipse(-sz*.8,0,sz*(kd===3?1.1:.75),sz*(kd===3?.7:.5),0,0,7);cx.fill();
- cx.beginPath();cx.ellipse(0,0,sz*.4,sz*.35,0,0,7);cx.fill();
- cx.beginPath();cx.arc(sz*.65,0,sz*(kd===1?.55:.38),0,7);cx.fill();
- if(leaf){cx.fillStyle='#6fbf4a';cx.beginPath();cx.ellipse(sz*1.2,0,sz*.55,sz*.34,.4,0,7);cx.fill()}
- cx.restore()}
-function drawFoe(x,y,ang,sz,tp,ph){cx.save();cx.translate(x,y);cx.rotate(ang);
- if(tp===2){var wf=Math.sin(ph*3)*.35;cx.fillStyle='rgba(235,245,255,.7)';cx.beginPath();cx.ellipse(-sz*.2,-sz*.8,sz*1.2,sz*.4,-.5+wf,0,7);cx.fill();cx.beginPath();cx.ellipse(-sz*.2,sz*.8,sz*1.2,sz*.4,.5-wf,0,7);cx.fill();
-  cx.fillStyle='#e6b422';cx.beginPath();cx.ellipse(-sz*.7,0,sz,sz*.6,0,0,7);cx.fill();
-  cx.strokeStyle='#1a1205';cx.lineWidth=2;cx.beginPath();cx.moveTo(-sz*.9,-sz*.55);cx.lineTo(-sz*.9,sz*.55);cx.moveTo(-sz*.4,-sz*.5);cx.lineTo(-sz*.4,sz*.5);cx.stroke();
-  cx.fillStyle='#1a1205';cx.beginPath();cx.arc(sz*.6,0,sz*.5,0,7);cx.fill();cx.restore();return}
- var sp=tp===1;cx.strokeStyle='#0c0705';cx.lineWidth=1.6;cx.beginPath();
- var n=sp?4:3,L=sz*(sp?1.6:1.1);for(var j=0;j<n;j++){var o=(j-(n-1)/2)*sz*.55,w=Math.sin(ph+j*1.7)*sz*.25;
-  cx.moveTo(o,0);cx.lineTo(o+w,L);cx.moveTo(o,0);cx.lineTo(o-w,-L)}cx.stroke();
- if(sp){cx.fillStyle='#4a2a4f';cx.beginPath();cx.ellipse(-sz*.7,0,sz*.9,sz*.75,0,0,7);cx.fill();cx.beginPath();cx.arc(sz*.55,0,sz*.5,0,7);cx.fill();
-  cx.fillStyle='#e14b4b';cx.beginPath();cx.arc(sz*.8,-sz*.18,1.6,0,7);cx.arc(sz*.8,sz*.18,1.6,0,7);cx.fill()}
- else{cx.fillStyle='#2c3e5c';cx.beginPath();cx.ellipse(-sz*.15,0,sz*1.2,sz*.85,0,0,7);cx.fill();
-  cx.strokeStyle='#6f8fc4';cx.lineWidth=1.2;cx.beginPath();cx.moveTo(-sz*1.2,0);cx.lineTo(sz*.9,0);cx.stroke();
-  cx.fillStyle='#1b2740';cx.beginPath();cx.ellipse(sz*1.3,0,sz*.5,sz*.45,0,0,7);cx.fill();
-  cx.strokeStyle='#1b2740';cx.lineWidth=2;cx.beginPath();cx.moveTo(sz*1.7,0);cx.lineTo(sz*2.4,-sz*.3);cx.moveTo(sz*1.7,0);cx.lineTo(sz*2.4,sz*.3);cx.stroke()}
- cx.restore()}
-function chamber(x,y,rx,ry,ic){cx.fillStyle='#150c07';cx.beginPath();cx.ellipse(x,y,rx+3,ry+3,0,0,7);cx.fill();cx.fillStyle='#7a5636';cx.beginPath();cx.ellipse(x,y,rx,ry,0,0,7);cx.fill();
- if(ic){cx.font='16px serif';cx.textAlign='center';cx.fillText(ic,x,y+6)}}
-function tpath(){var lo=1-S.dg,a=at(lo);cx.beginPath();cx.moveTo(a.x,a.y);for(var i=1;i<PT.length;i++)if(CUM[i]>lo*LEN)cx.lineTo(PT[i][0],PT[i][1])}
 function foeSz(f){return (8+S.tier*1.5)*(f.boss?1.9:1)}
-function drawT(now){
+function drawWorld(now){
  cx.setTransform(dpr*K,0,0,dpr*K,0,0);cx.save();cx.translate(0,-cam);
- var g=cx.createLinearGradient(0,0,0,WH);g.addColorStop(0,'#4a3322');g.addColorStop(1,'#241710');cx.fillStyle=g;cx.fillRect(0,0,W,WH);
+ var g=cx.createLinearGradient(0,0,0,WH);g.addColorStop(0,'#4a3322');g.addColorStop(1,'#241710');cx.fillStyle=g;cx.fillRect(0,0,W,WH);soilTex();
  pebs.forEach(function(p){cx.fillStyle=p[3]>.5?'#6a4c36':'#1e130c';cx.globalAlpha=.6;cx.beginPath();cx.arc(p[0],p[1],p[2],0,7);cx.fill()});cx.globalAlpha=1;
  var sg=cx.createLinearGradient(0,0,0,24);sg.addColorStop(0,'#a9d3df');sg.addColorStop(1,'#d3e8da');cx.fillStyle=sg;cx.fillRect(0,0,W,24);cx.fillStyle='#5b8f3a';cx.fillRect(0,20,W,6);
  var e=PT[0],mr=28+S.tier*8;cx.fillStyle='#7a5636';cx.beginPath();cx.ellipse(e[0],24,mr,mr*.5+S.tier*2,0,Math.PI,0);cx.fill();
  var tw=7+S.tier;
  for(var i=0;i<S.tier&&i<4;i++){var q=PT[CI[i]];chamber(q[0]+(i%2?-34:34),q[1],26,16,IC[i])}
  var rx=62+S.tier*5,ry=36+S.tier*2;chamber(QX,QY,rx,ry);
- if(S.dg>.003){tpath();cx.lineCap='round';cx.lineJoin='round';cx.strokeStyle='#150c07';cx.lineWidth=tw+6;cx.stroke();cx.strokeStyle='#8a6340';cx.lineWidth=tw;cx.stroke()}
+ if(S.dg>.003){tpath();cx.lineCap='round';cx.lineJoin='round';cx.strokeStyle='#150c07';cx.lineWidth=tw+6;cx.stroke();cx.strokeStyle='#5a3d26';cx.lineWidth=tw+3;cx.stroke();cx.strokeStyle='#8a6340';cx.lineWidth=tw;cx.stroke();cx.strokeStyle='#a67c50';cx.lineWidth=tw*.5;cx.stroke();cx.strokeStyle='rgba(255,230,190,.16)';cx.lineWidth=Math.max(1,tw*.18);cx.stroke()}
  if(S.dg>=1){cx.fillStyle='#150c07';cx.beginPath();cx.ellipse(e[0],24,tw*.6,5,0,0,7);cx.fill()}
  var nl=Math.min(28,Math.floor(S.fd));for(var i=0;i<nl;i++){cx.fillStyle=i%2?'#6fbf4a':'#4f9a35';cx.beginPath();cx.ellipse(QX-rx*.72+((i*17)%9)*4,QY+2+(i%5)*5,4,2.4,i,0,7);cx.fill()}
  var ne=0;for(var i=0;i<ne;i++){cx.fillStyle='#f4efe0';cx.beginPath();cx.ellipse(QX+rx*.3+((i*29)%8)*5,QY+3+(i%4)*5+Math.sin(now*.003+i)*.6,2.6,3.4,0,0,7);cx.fill()}
- drawAnt(QX,QY-2,0,15+pulse*3,false,now*.004,3);
- if(S.dg<1&&digging){var t=at(1-S.dg);for(var k=0;k<Math.min(6,S.w+S.fo+S.so);k++)drawAnt(t.x+Math.cos(now*.004+k*1.6)*8,t.y+Math.sin(now*.005+k*2.3)*6,now*.003+k,3.6,false,now*.02+k,0)}
- marchers.forEach(function(m){if(m.k===2&&foes.length)return;var a=at(m.p),o=m.l*tw*.28;
+ drawCushion(now);drawAnt(QX,QY-2,0,15+pulse*3,false,now*.004,3);
+ if(S.dg<1&&digging){var t=at(1-S.dg);for(var k=0;k<Math.min(6,popn());k++)drawAnt(t.x+Math.cos(now*.004+k*1.6)*8,t.y+Math.sin(now*.005+k*2.3)*6,now*.003+k,3.6,false,now*.02+k,0)}
+ marchers.forEach(function(m){return;var a=at(m.p),o=m.l*tw*.28;
   drawAnt(a.x+a.nx*o,a.y+a.ny*o,m.d===1?a.ang:a.ang+Math.PI,m.k===2?4.8:3.6,m.k===1&&m.d===1&&S.dg>=1,m.ph,m.k===2?1:0)});
  foes.forEach(function(f){var a=at(f.p),sz=foeSz(f),fl=f.tp===2?Math.sin(now*.006+f.o)*5:0;
   drawFoe(a.x+a.nx*(f.o+fl),a.y+a.ny*(f.o+fl),a.ang,sz,f.tp,now*.02);
   var bw=f.boss?56:34,hx=a.x+a.nx*f.o-bw/2,hy=a.y+a.ny*f.o-sz*2.3;cx.fillStyle='rgba(0,0,0,.6)';cx.fillRect(hx-1,hy-1,bw+2,7);cx.fillStyle=f.boss?'#c43fe0':'#e0553f';cx.fillRect(hx,hy,bw*Math.max(0,f.hp/f.max),5)});
- if(foes.length){var F=Math.min(70,3+(S.cnt.soldier||0));
+ if(foes.length){var F=0;
   for(var i=0;i<F;i++){var f=foes[i%foes.length],a=at(f.p),sz=foeSz(f),gg=i*2.4+now*.0006,r=sz*1.5+Math.max(0,Math.sin(now*.016+i*2))*7;
    drawAnt(a.x+a.nx*f.o+Math.cos(gg)*r,a.y+a.ny*f.o+Math.sin(gg)*r,gg+Math.PI,i<(S.cnt.soldier||0)?5:3.6,false,now*.02+i,i<(S.cnt.soldier||0)?1:0)}}
  fx.forEach(function(p){cx.globalAlpha=Math.max(0,Math.min(1,p.l*2));
@@ -259,19 +200,12 @@ function drawT(now){
  cx.globalAlpha=1;cx.restore()}
 
 /* ---------- game logic ---------- */
-function sync(){var c=S.cnt,want=[Math.min(160,(c.nurse||0)+(c.garden||0)+(c.brood||0)+(c.vault||0)+(S.tot>0?1:0)),Math.min(120,c.forager||0),Math.min(120,c.soldier||0)],have=[0,0,0];
- marchers.forEach(function(m){have[m.k]++});
- for(var k=0;k<3;k++){while(have[k]<want[k]){marchers.push({k:k,p:1-Math.random()*Math.max(.05,S.dg),d:Math.random()<.5?1:-1,l:Math.random()*2-1,v:.8+Math.random()*.4,ph:Math.random()*6});have[k]++}
-  while(have[k]>want[k]){for(var i=marchers.length-1;i>=0;i--)if(marchers[i].k===k){marchers.splice(i,1);break}have[k]--}}}
 function wave(){S.wv++;var boss=S.wv%10===0,cnt=boss?3:1+Math.floor(S.tier*.8)+(Math.random()<.4?1:0),ty=[0];
  if(S.tier>=2)ty.push(1);if(S.tier>=3)ty.push(2);
  var tp=ty[Math.floor(Math.random()*ty.length)],base=30*Math.pow(1+S.tot/150,.5);
  foes=[];for(var i=0;i<cnt;i++){var b=boss&&i===0,h=base*(b?2.2:.65);foes.push({p:-.06*i,tp:tp,boss:b,hp:h,max:h,at:.5+Math.random()*.6,tm:.3,acc:0,o:(i-(cnt-1)/2)*16})}
  wvi={n:cnt,boss:boss,w:1};SFX.alarm();
  toast(boss?'Boss wave! A giant '+FN[tp]+' leads the attack.':'Wave '+S.wv+': '+cnt+' '+FN[tp]+(cnt>1?'s':'')+' in the tunnel!')}
-function loot(p,w){var a=at(p),g=Math.ceil((aps()*45+100)*(w.boss?3:1+w.n*.3)),f=Math.ceil(feedCost()*(w.boss?1.5:.5));
- add(g);S.fd=Math.min(foodCap(),S.fd+f);SFX.win();
- fx.push({x:a.x,y:a.y-10,vx:0,vy:-28,l:2,t:'\ud83c\udf43',f:22,g:0});toast((w.boss?'Boss defeated! ':'Wave cleared! ')+'+'+fmt(g)+' ants and '+f+' food.')}
 function lose(){dead=true;foes=[];SFX.lose();var h=Math.floor(gain()/2);
  $('overp').textContent='Invaders broke through to the queen. You hatched '+fmt(S.tot)+' ants this colony. '+(h?'You keep '+h+' legacy.':'Hatch more next time to earn legacy.');$('over').classList.add('on')}
 var lt=performance.now(),sy=0,dc=0;
@@ -281,7 +215,7 @@ function frame(n){var dt=Math.min((n-lt)/1000,.1);lt=n;
    if(dc<=0){dc=.28;SFX.dig();var t=at(1-S.dg);fx.push({x:t.x,y:t.y,vx:Math.random()*30-15,vy:-10-Math.random()*20,l:.5,c:'#8a6340',s:2.5,g:60})}
    if(S.dg>=1){toast('The tunnel breaks through to the surface! Foragers can now bring food in.');SFX.win();nf=n+40000}}
   else 0;
-  if(S.st<=0)S.hp-=.15*dt;else if(!foes.length)S.hp=Math.min(100,S.hp+.08*dt);
+  if(S.st<=0)S.hp-=.15*dt;else if(!foes.length)S.hp=Math.min(hpMax(),S.hp+.08*dt);
   if(S.dg>=1&&!foes.length&&!wvi.w&&n>nf)wave();
   var team=dps()/(foes.length||1);
   if(foes.length)S.a=Math.max(0,S.a-S.a*.002*foes.length*um('armor')*dt);
@@ -302,57 +236,33 @@ function frame(n){var dt=Math.min((n-lt)/1000,.1);lt=n;
  marchers.forEach(function(m){m.p+=m.d*m.v*sp*dt;if(m.p>1){m.p=1;m.d=-1;if(m.k===1&&S.dg>=1)deposit(),fx.push({x:QX-20,y:QY-20,vx:0,vy:-15,l:.7,t:'\ud83c\udf43',f:11,g:0})}else if(m.p<lo){m.p=lo;m.d=1}m.ph+=dt*14*m.v});
  cam+=(camT-cam)*Math.min(1,dt*8);
  if(tab!=='col')drawT(n);ui();requestAnimationFrame(frame)}
-cv.addEventListener('pointerdown',function(e){if(tab!=='nest'||dead)return;var p=power();S.lay=Math.max(0,S.lay-2);pulse=1;SFX.lay();
+cv.addEventListener('pointerdown',function(e){if(tab!=='nest'||dead)return;S.lay=Math.max(0,S.lay-2);pulse=1;SFX.lay();
  fx.push({x:QX+Math.random()*50-25,y:QY-34,vx:0,vy:-40,l:.9,t:'-2s',f:13,c:'#ffe9a8',g:0})});
 
 /* ---------- save ---------- */
-function save(){S.t=Date.now();try{localStorage.setItem('thecolony1',JSON.stringify({S:S,P:P,m:mut}))}catch(e){}}
-function load(){try{var d=JSON.parse(localStorage.getItem('thecolony1'));if(d&&d.S&&typeof d.S.a==='number'){S=Object.assign(fresh(),d.S);P=Object.assign({lp:0,ev:0,pk:{}},d.P);mut=!!d.m;$('snd').textContent=mut?'Sound off':'Sound on';
-  var sec=Math.min((Date.now()-S.t)/1000,7200),g=raw()*sec*.3;if(sec>60&&g>=1){add(g);toast('While you were away the colony hatched '+fmt(g)+' ants.')}}}catch(e){}}
+function save(){S.t=Date.now();try{localStorage.setItem('thecolony2',JSON.stringify({S:S,P:P,m:mut}))}catch(e){}}
+function load(){try{var d=JSON.parse(localStorage.getItem('thecolony2'));if(d&&d.S&&typeof d.S.a==='number'){S=Object.assign(fresh(),d.S);P=Object.assign({lp:0,ev:0,pk:{}},d.P);mut=!!d.m;$('snd').textContent=mut?'Sound off':'Sound on';
+  }}catch(e){}}
 /* ---------- procedural tunnels, tiny ants, new queen art ---------- */
 var BRN=[],BP=[],MP=[],MAIN=null,bants=[],nbt=25,ltx=performance.now(),follow=0,dy0=null;
-function fresh(){return {a:0,tot:0,cnt:{},up:{},tier:0,dg:0,fd:0,st:1,fed:0,hp:100,wv:0,t:Date.now(),seed:(Math.random()*4e9)>>>0,nb:0,bg:[]}}
 function rng(s){return function(){s=(s*1664525+1013904223)>>>0;return s/4294967296}}
 function gen(){var r=rng(S.seed);MP=[[.15+r()*.7,.05]];
  for(var i=1;i<8;i++)MP.push([.1+r()*.8,.05+.83*i/9+(r()-.5)*.03]);MP.push([.3+r()*.4,.88]);
  BRN=[];for(var k=0;k<12;k++){var q=rng(S.seed+k*977+13),j=1+Math.floor(q()*7),a=MP[j],pts=[a],dir=q()<.5?-1:1,x=a[0],y=a[1],m=3+Math.floor(q()*3);
   for(var i=0;i<m;i++){x+=dir*(.1+q()*.14);y+=(q()-.3)*.1;if(x<.05||x>.95){dir=-dir;x=Math.max(.05,Math.min(.95,x))}y=Math.max(.08,Math.min(.9,y));pts.push([x,y])}BRN.push(pts)}}
 function mk(pts){var P2=pts.map(function(p){return [p[0]*W,p[1]*WH]}),C=[0],L=0;for(var i=1;i<P2.length;i++){L+=Math.hypot(P2[i][0]-P2[i-1][0],P2[i][1]-P2[i-1][1]);C.push(L)}return {PT:P2,CUM:C,LEN:L}}
-function sizeT(){dpr=window.devicePixelRatio||1;var cw=cv.clientWidth||320;W=cw/K;H=400/K;WH=H*2.6;cv.width=cw*dpr;cv.height=400*dpr;
+function sizeT(){K=1.1*ZM[S.tier];dpr=window.devicePixelRatio||1;var cw=cv.clientWidth||320;W=cw/K;H=400/K;WH=H*2.6;cv.width=cw*dpr;cv.height=400*dpr;
  gen();MAIN=mk(MP);PT=MAIN.PT;CUM=MAIN.CUM;LEN=MAIN.LEN;BP=BRN.map(mk);QX=PT[8][0];QY=PT[8][1];
  pebs=[];for(var k=0;k<260;k++)pebs.push([Math.random()*W,24+Math.random()*WH,1+Math.random()*2,Math.random()]);camT=tab==='tun'?0:WH-H;cam=camT}
 function at(p,q){q=q||MAIN;p=Math.max(0,Math.min(1,p));var P2=q.PT,C=q.CUM,d=p*q.LEN,i=1;while(i<C.length-1&&C[i]<d)i++;
  var a=P2[i-1],b=P2[i],t=Math.max(0,Math.min(1,(d-C[i-1])/((C[i]-C[i-1])||1))),dx=b[0]-a[0],dy=b[1]-a[1],l=Math.hypot(dx,dy)||1;
  return {x:a[0]+dx*t,y:a[1]+dy*t,nx:-dy/l,ny:dx/l,ang:Math.atan2(dy,dx)}}
 function tpath(){var k,i;
- for(k=0;k<S.nb&&k<BP.length;k++)if(S.bg[k]>=1){var en=BP[k].PT[BP[k].PT.length-1];chamber(en[0],en[1],12,8)}
+ for(k=0;k<S.nb&&k<BP.length;k++)if(S.bg[k]>=1){var en=BP[k].PT[BP[k].PT.length-1];chamber(en[0],en[1],12,8,DI[dType(k)])}
  var lo=1-S.dg,a=at(lo);cx.beginPath();cx.moveTo(a.x,a.y);for(i=1;i<PT.length;i++)if(CUM[i]>lo*LEN)cx.lineTo(PT[i][0],PT[i][1]);
  for(k=0;k<S.nb&&k<BP.length;k++){var q=BP[k],pr=S.bg[k]==null?1:S.bg[k],d=pr*q.LEN;cx.moveTo(q.PT[0][0],q.PT[0][1]);
   for(i=1;i<q.PT.length;i++)if(q.CUM[i]<d)cx.lineTo(q.PT[i][0],q.PT[i][1]);var e=at(pr,q);cx.lineTo(e.x,e.y)}}
-function queen(s,ph){var br=1+Math.sin(ph*.5)*.03,j,i;
- cx.strokeStyle='#1a0c05';cx.lineWidth=1.3;cx.lineJoin='round';cx.beginPath();
- for(j=-1;j<=1;j++){var w=Math.sin(ph+j*2)*s*.08,x0=s*.1+j*s*.38;[1,-1].forEach(function(sd){cx.moveTo(x0,0);cx.lineTo(x0+j*s*.2+w,sd*s*.7);cx.lineTo(x0+j*s*.45+w*1.5,sd*s*1.15)})}cx.stroke();
- var g=cx.createRadialGradient(-s*1.1,-s*.3,s*.1,-s*.9,0,s*1.2);g.addColorStop(0,'#a8683a');g.addColorStop(1,'#3a1c0c');cx.fillStyle=g;cx.beginPath();cx.ellipse(-s*.95,0,s*1.2*br,s*.8*br,0,0,7);cx.fill();
- cx.strokeStyle='rgba(20,8,2,.55)';cx.lineWidth=1;for(i=0;i<4;i++){cx.beginPath();cx.ellipse(-s*(.55+i*.3),0,s*.12,s*(.74-i*.12)*br,0,0,7);cx.stroke()}
- cx.fillStyle='rgba(255,230,190,.35)';cx.beginPath();cx.ellipse(-s*1.1,-s*.35,s*.5,s*.15,-.2,0,7);cx.fill();
- cx.fillStyle='rgba(235,245,255,.55)';cx.beginPath();cx.ellipse(-s*.35,-s*.45,s*.75,s*.22,-.35,0,7);cx.fill();cx.beginPath();cx.ellipse(-s*.35,s*.45,s*.75,s*.22,.35,0,7);cx.fill();
- cx.fillStyle='#4a2410';cx.beginPath();cx.ellipse(s*.2,0,s*.5,s*.4,0,0,7);cx.fill();cx.fillStyle='#5a2d14';cx.beginPath();cx.ellipse(s*.95,0,s*.45,s*.38,0,0,7);cx.fill();
- cx.fillStyle='#fff';cx.beginPath();cx.arc(s*1.05,-s*.2,s*.1,0,7);cx.fill();cx.beginPath();cx.arc(s*1.05,s*.2,s*.1,0,7);cx.fill();
- cx.fillStyle='#120804';cx.beginPath();cx.arc(s*1.08,-s*.2,s*.05,0,7);cx.fill();cx.beginPath();cx.arc(s*1.08,s*.2,s*.05,0,7);cx.fill();
- cx.strokeStyle='#1a0c05';cx.lineWidth=1.2;cx.beginPath();cx.moveTo(s*1.35,-s*.12);cx.lineTo(s*1.6,-s*.05);cx.moveTo(s*1.35,s*.12);cx.lineTo(s*1.6,s*.05);
- var aw=Math.sin(ph*.7)*s*.08;cx.moveTo(s*1.2,-s*.25);cx.lineTo(s*1.55,-s*.55+aw);cx.lineTo(s*1.85,-s*.45+aw);cx.moveTo(s*1.2,s*.25);cx.lineTo(s*1.55,s*.55-aw);cx.lineTo(s*1.85,s*.45-aw);cx.stroke();
- cx.fillStyle='#f2c94c';cx.strokeStyle='#8a6a10';cx.lineWidth=.8;cx.beginPath();cx.moveTo(s*.7,-s*.38);cx.lineTo(s*.75,-s*.78);cx.lineTo(s*.9,-s*.55);cx.lineTo(s*1.05,-s*.85);cx.lineTo(s*1.2,-s*.55);cx.lineTo(s*1.35,-s*.78);cx.lineTo(s*1.32,-s*.34);cx.closePath();cx.fill();cx.stroke();
- cx.fillStyle='#e0553f';cx.beginPath();cx.arc(s*1.05,-s*.55,s*.06,0,7);cx.fill()}
-function drawAnt(x,y,ang,sz,leaf,ph,kd){cx.save();cx.translate(x,y);cx.rotate(ang);
- if(kd===3){queen(sz,ph);cx.restore();return}
- var u=sz/3.6*.65;cx.strokeStyle=kd===1?'#5a1308':'#0e0804';cx.lineWidth=.3;cx.beginPath();
- for(var j=-1;j<=1;j++){var w=Math.sin(ph+j*2)*u*.5;cx.moveTo(j*u*.5,0);cx.lineTo(j*u*.5+w,u*1.3);cx.moveTo(j*u*.5,0);cx.lineTo(j*u*.5-w,-u*1.3)}cx.stroke();
- cx.fillStyle=kd===1?'#b23418':'#2b1509';
- cx.beginPath();cx.arc(-u*1.1,0,u*.8,0,7);cx.fill();cx.beginPath();cx.arc(0,0,u*.55,0,7);cx.fill();cx.beginPath();cx.arc(u*1.05,0,u*(kd===1?.8:.6),0,7);cx.fill();
- cx.fillStyle='#fff';cx.beginPath();cx.arc(u*1.3,-u*.3,.28,0,7);cx.fill();cx.beginPath();cx.arc(u*1.3,u*.3,.28,0,7);cx.fill();
- if(leaf){cx.fillStyle='#6fbf4a';cx.beginPath();cx.arc(u*1.9,0,u*.5,0,7);cx.fill()}
- cx.restore()}
-function extra(dt){
+function branches(dt){
  if(dead||!BP.length)return;
  if(S.dg>=1){var k=S.nb,cap=Math.min(12,3+S.tier*2);
   if(k>0&&S.bg[k-1]<1){S.bg[k-1]=Math.min(1,S.bg[k-1]+dt*.02*(1+Math.log10(1+S.tot)*.5)*(1+.5*pk('swift')));
@@ -361,17 +271,17 @@ function extra(dt){
    if(S.bg[k-1]>=1){toast('Your ants finished digging a new side tunnel.');SFX.buy();nbt=40+Math.random()*60}}
   else if(k<cap){nbt-=dt;if(nbt<=0){S.bg[k]=0;S.nb=k+1}}}
  var done=0,i;for(i=0;i<S.nb;i++)done+=S.bg[i]>=1?1:0;
- var want=S.nb?Math.min(70,Math.floor((S.cnt.nurse||0)/2)+done*4+4):0;
+ var want=0;
  while(bants.length<want)bants.push({q:Math.floor(Math.random()*S.nb),p:Math.random(),d:Math.random()<.5?1:-1,v:.5+Math.random()*.6,l:(Math.random()-.5)*2,ph:Math.random()*6});
  bants.length=Math.min(bants.length,want);
  bants.forEach(function(m){m.p+=m.d*m.v*.05*dt;if(m.p>1){m.p=1;m.d=-1}else if(m.p<0){m.p=0;m.d=1}m.ph+=dt*14*m.v});
  if(tab==='tun'&&foes.length&&performance.now()>follow){var a=at(foes[0].p);camT=Math.max(0,Math.min(WH-H,a.y-H/2))}}
 try{(function(){var d=Object.getOwnPropertyDescriptor(Element.prototype,'innerHTML');Object.defineProperty(Element.prototype,'innerHTML',{get:d.get,set:function(v){if(this._h===v)return;this._h=v;d.set.call(this,v)},configurable:true})})()}catch(e){}
-var _dT=drawT;drawT=function(now){_dT(now);cx.save();cx.translate(0,-cam);
+function drawBants(now){cx.save();cx.translate(0,-cam);
  bants.forEach(function(m){var q=BP[m.q];if(!q)return;var pr=S.bg[m.q];if(pr==null)pr=1;var a=at(m.p*pr,q);drawAnt(a.x+a.nx*m.l,a.y+a.ny*m.l,m.d>0?a.ang:a.ang+Math.PI,3.6,false,m.ph,0)});
  var k=S.nb-1;if(k>=0&&S.bg[k]<1){var t=at(S.bg[k],BP[k]);for(var i=0;i<3;i++)drawAnt(t.x+Math.cos(now*.004+i*2)*2,t.y+Math.sin(now*.005+i*2.3)*2,now*.003+i,3.6,false,now*.02+i,0)}
- cx.restore()};
-var _ui=ui;ui=function(){_ui();var n=performance.now(),dt=Math.min(.1,(n-ltx)/1000);ltx=n;extra(dt)};
+ cx.restore()}
+function ui(){hudColony();hudClasses();var n=performance.now(),dt=Math.min(.1,(n-ltx)/1000);ltx=n;extra(dt)}
 /* ---------- visual polish: lighting, ambience, celebrations ---------- */
 var rings=[],flash=0,motes=[],MSD=[[100,'First Hundred'],[1e3,'The Gathering'],[1e4,'The Great Swarm'],[1e5,'Rising Empire'],[1e6,'One Million'],[1e7,'Ant Nation'],[1e8,'The Endless March']];
 for(var mi=0;mi<40;mi++)motes.push({a:Math.random()*6.28,b:Math.random()*6.28,s:.2+Math.random()*.6,x:Math.random(),y:Math.random()});
@@ -400,17 +310,12 @@ function lighting(now){var i,t=now*.001;
  cx.restore();
  if(foes.length){var vg=cx.createRadialGradient(W/2,H/2,H*.35,W/2,H/2,H*.8);vg.addColorStop(0,'rgba(200,30,20,0)');vg.addColorStop(1,'rgba(200,30,20,'+(.22+.08*Math.sin(t*6))+')');cx.fillStyle=vg;cx.fillRect(0,0,W,H)}
  if(flash>0){cx.fillStyle='rgba(255,245,210,'+flash*.5+')';cx.fillRect(0,0,W,H);flash=Math.max(0,flash-.035)}}
-var _d2=drawT;drawT=function(now){_d2(now);lighting(now)};
-function celebrate(t){flash=.6;pulseRing();pulseRing('120,230,255');burst(QX,QY,60,['#ffd35a','#7fcf8f','#fff','#e0553f','#6fa8ff'],160);SFX.win();toast(t+'! '+fmt(S.tot)+' ants hatched.');shake=.5}
-function poll(){var n=0;while(n<MSD.length&&S.tot>=MSD[n][0])n++;if(n>(S.ms||0)){S.ms=n;celebrate(MSD[n-1][1])}
- var nt=T[S.tier+1],f=nt?Math.min(1,S.a/nt.c):1;$('tpb').style.width=(f*100)+'%';$('tpl').textContent=nt?'Next: '+nt.n+' ('+Math.floor(f*100)+'%)':'Supercolony reached'}
-var _ex=extra;extra=function(dt){_ex(dt);poll()};
-var _by=buy;buy=function(b){var n=S.cnt[b.id]||0;_by(b);if((S.cnt[b.id]||0)>n){burst(QX,QY-10,10,['#ffd35a','#fff'],70);if(b.id==='soldier')pulseRing('255,120,90')}};
-var _dg=dig;dig=function(){var t=S.tier;_dg();if(S.tier>t){flash=1;pulseRing();pulseRing('255,255,255');burst(QX,QY,70,['#ffd35a','#fff','#7fcf8f'],190);shake=.6;fx.push({x:QX,y:QY-70,vx:0,vy:-12,l:2.2,t:T[S.tier].n+'!',f:28,c:'#ffe9a8',g:0})}};
+function celebrate(t){gainJelly(2);flash=.6;pulseRing();pulseRing('120,230,255');burst(QX,QY,60,['#ffd35a','#7fcf8f','#fff','#e0553f','#6fa8ff'],160);SFX.win();toast(t+'! '+fmt(S.tot)+' ants hatched.');shake=.5}
+var _dg=dig;dig=function(){var t=S.tier;_dg();if(S.tier>t){sizeT();cv.classList.remove('zin');void cv.offsetWidth;cv.classList.add('zin');flash=1;pulseRing();pulseRing('255,255,255');burst(QX,QY,70,['#ffd35a','#fff','#7fcf8f'],190);shake=.6;fx.push({x:QX,y:QY-70,vx:0,vy:-12,l:2.2,t:T[S.tier].n+'!',f:28,c:'#ffe9a8',g:0})}};
 var _up=upg;upg=function(u){var had=S.up[u.id];_up(u);if(!had&&S.up[u.id])burst(QX,QY,18,['#fff','#ffd35a'],90)};
 cv.addEventListener('pointerdown',function(){if(tab==='nest'&&!dead){fx.push({x:QX-34,y:QY+2,vx:-26-Math.random()*14,vy:-26,l:.9,t:'\ud83e\udd5a',f:10,g:140});if(Math.random()<.3)pulseRing('255,235,200')}});
 /* ---------- THE COLONY: population core (eggs, hatching, food, roles) ---------- */
-var CAPS=[10,30,80,220,600],TP=[0,8,25,70,200],TF=[0,20,100,500,2500],digging=false,reb=0;
+var CAPS=[12,40,120,400,1500],TP=[0,8,25,80,250],TF=[0,20,120,600,3000],digging=false,reb=0;
 MSD=[[5,'First Brood'],[10,'A Real Colony'],[25,'The Colony Grows'],[50,'Fifty Strong'],[100,'A Hundred Legs'],[250,'The Great Swarm'],[500,'Ant Nation'],[1000,'The Endless March']];
 U=[{id:'dig',n:'Strong mandibles',d:'Your ants dig twice as fast.',c:15,t:'dig',m:2},
  {id:'warm',n:'Warm brood',d:'Eggs hatch 40% faster.',c:30,t:'hatch',m:.6},
@@ -424,52 +329,22 @@ U=[{id:'dig',n:'Strong mandibles',d:'Your ants dig twice as fast.',c:15,t:'dig',
  {id:'leaf2',n:'Fungus gardens',d:'Foragers carry twice as much again.',c:600,t:'forager',m:2}];
 $('ul').textContent='';U.forEach(function(u){card($('ul'),'u-'+u.id,function(){upg(u)})});
 $('bl').textContent='';card($('bl'),'r-so',function(){S.rs=Math.min(80,S.rs+10)});card($('bl'),'r-fo',function(){S.rs=Math.max(10,S.rs-10)});
-function fresh(){return {a:0,tot:0,cnt:{},up:{},tier:0,dg:0,fd:8,st:1,fed:0,hp:100,wv:0,t:Date.now(),seed:(Math.random()*4e9)>>>0,nb:0,bg:[],w:1,fo:0,so:0,eg:[{t:6,b:0},{t:12,b:0}],lay:15,rs:25,kt:5}}
 function aps(){return 0}
-function dps(){return (S.so*3*um('soldier')+(S.w+S.fo)*.5)*(1+.15*pk('hardy'))}
 function gain(){return S.tier>=3?Math.floor(Math.sqrt(S.tot/40)):0}
-function layGap(){return 30*um('lay')}
+function layGap(){return 30*um('lay')*(1-.07*S.ql)*(S.tier>=4?.9:1)}
 function eggCost(){return Math.max(1,Math.ceil((1+S.tier)*(1-.15*pk('fat'))))}
-function digRate(){var p=S.w+S.fo+S.so;return p>=5?.0035*p*um('dig')*(1+.5*pk('swift')):0}
 function foodCap(){return Math.round(400*Math.pow(2.2,S.tier+1))}
-function leaf(){return (1+.15*S.tier)*um('forager')*(1+.05*P.ev)}
-function deposit(){S.fd=Math.min(foodCap(),S.fd+leaf()*S.fo/Math.max(1,Math.min(120,S.fo)))}
+function leaf(){return (1+.15*S.tier)*um('forager')*(1+.05*P.ev)*(1+.2*S.cl[1])}
 function eggPos(i){return {x:QX+14+(i%6)*8,y:QY+8+Math.floor(i/6)*8}}
 function assign(){if(S.dg<1){S.w++;return}var t=S.fo+S.so;if(S.so<Math.floor(S.rs/100*(t+1)))S.so++;else S.fo++}
-function kill(){var pop=S.w+S.fo+S.so;if(!pop)return;var r=Math.random()*pop;if(r<S.w)S.w--;else if(r<S.w+S.fo)S.fo--;else S.so--;SFX.hit();fx.push({x:QX,y:QY-20,vx:0,vy:-20,l:.8,t:'\ud83d\udc80',f:14,g:0});sync()}
-function hatch(p){assign();S.tot++;pulse=.6;tn(900,.06,'triangle',.06);burst(p.x,p.y,8,['#fff6d8','#ffd35a'],50);sync()}
-function sync(){var want=[Math.min(160,S.w),Math.min(120,S.fo),Math.min(120,S.so)],have=[0,0,0],k,i;
- marchers.forEach(function(m){have[m.k]++});
- for(k=0;k<3;k++){while(have[k]<want[k]){marchers.push({k:k,p:1,d:-1,l:Math.random()*2-1,v:.8+Math.random()*.4,ph:Math.random()*6});have[k]++}
-  while(have[k]>want[k]){for(i=marchers.length-1;i>=0;i--)if(marchers[i].k===k){marchers.splice(i,1);break}have[k]--}}
- S.cnt.nurse=0;S.cnt.forager=S.fo;S.cnt.soldier=S.so}
-function loot(p,w){var a=at(p),f=Math.ceil((2+S.tier*2)*(w.boss?5:1+.5*w.n));S.fd=Math.min(foodCap(),S.fd+f);SFX.win();
+function loot(p,w){var a=at(p),f=Math.ceil((2+S.tier*2)*(w.boss?5:1+.5*w.n));S.fd=Math.min(foodCap(),S.fd+f);gainJelly(w.boss?5:1);SFX.win();
  fx.push({x:a.x,y:a.y-10,vx:0,vy:-28,l:2,t:'\ud83c\udf43',f:22,g:0});toast((w.boss?'Boss defeated! ':'Wave cleared! ')+'+'+f+' food.')}
 function upg(u){if(S.up[u.id]||S.fd<u.c)return;S.fd-=u.c;S.up[u.id]=1;SFX.buy()}
-function dig(){var n=T[S.tier+1],pop=S.w+S.fo+S.so;if(!n||pop<TP[S.tier+1]||S.fd<TF[S.tier+1])return;S.fd-=TF[S.tier+1];S.tier++;SFX.win();toast('Your nest is now a '+n.n+'. Room for '+CAPS[S.tier]+' ants.')}
 var _sd=SFX.dig;SFX.dig=function(){if(digging)_sd()};
 var _ls=lose;lose=function(){_ls();if(!(S.w+S.fo+S.so))$('overp').textContent='Every ant is gone and no eggs remain. The colony has died out.'};
-function colony(dt){if(dead)return;
- S.st=1;S.fed=0;S.cnt.soldier=S.so;S.cnt.forager=S.fo;
- var pop=S.w+S.fo+S.so,cap=CAPS[S.tier],i;
- digging=S.dg<1&&pop>=5;
- S.fd=Math.max(0,S.fd-pop*.01*dt);
- if(S.fd<=0&&pop>0){S.sv=(S.sv||0)+dt;if(S.sv>10){S.sv=0;kill();toast('The colony is starving. Send more foragers.')}}else S.sv=0;
- S.lay-=dt;
- if(S.lay<=0){var room=cap-pop-S.eg.length,n=Math.min(Math.round(um('clutch')),room,Math.floor(S.fd/eggCost()));
-  if(n>0){S.fd-=n*eggCost();for(i=0;i<n;i++)S.eg.push({t:18*um('hatch')*(.9+Math.random()*.3),b:performance.now()});S.lay=layGap();pulse=1;SFX.lay();
-   fx.push({x:QX-34,y:QY+2,vx:-20,vy:-20,l:.9,t:'\ud83e\udd5a',f:10,g:140})}else S.lay=0}
- for(i=S.eg.length-1;i>=0;i--){var e=S.eg[i];e.t-=dt;if(e.t<=0){var p=eggPos(i);S.eg.splice(i,1);hatch(p)}}
- if(S.dg>=1&&S.w>0){var a=S.w;S.w=0;for(i=0;i<a;i++)assign();sync()}
- reb+=dt;if(reb>3){reb=0;var tt=S.fo+S.so;if(tt>1){var want=Math.round(tt*S.rs/100);if(S.so<want&&S.fo>0){S.fo--;S.so++;sync()}else if(S.so>want&&S.so>0){S.so--;S.fo++;sync()}}}
- var nr=foes.filter(function(f){return f.p>=.9}).length;if(nr){S.kt-=dt;if(S.kt<=0){S.kt=6/nr;if(Math.random()<um('armor'))kill()}}
- if(pop===0&&!S.eg.length)lose()}
-var _ex2=extra;extra=function(dt){_ex2(dt);colony(dt)};
-function poll(){var n=0;while(n<MSD.length&&S.tot>=MSD[n][0])n++;if(n>(S.ms||0)){S.ms=n;celebrate(MSD[n-1][1])}
- var nt=T[S.tier+1],pop=S.w+S.fo+S.so,f=nt?Math.min(1,pop/TP[S.tier+1],S.fd/TF[S.tier+1]):1;$('tpb').style.width=(f*100)+'%';$('tpl').textContent=nt?'Next nest: '+nt.n+' ('+Math.floor(f*100)+'%)':'Fully dug'}
-_ui=function(){var pop=S.w+S.fo+S.so,cap=CAPS[S.tier],gap=layGap();
- $('ants').textContent=pop;$('aps').textContent=Math.floor(S.fd);
- $('hpt').textContent=Math.ceil(S.hp)+' / 100';$('hpb').style.width=Math.max(0,S.hp)+'%';
+function hudColony(){var pop=popn(),cap=CAPS[S.tier],gap=layGap();
+ $('ants').textContent=pop;$('aps').textContent=Math.floor(S.fd);$('jel').textContent=S.jl;
+ $('hpt').textContent=Math.ceil(S.hp)+' / '+hpMax();$('hpb').style.width=Math.max(0,S.hp/hpMax()*100)+'%';
  $('stb').style.width=(Math.max(0,1-S.lay/gap)*100)+'%';
  $('stt').textContent=pop+S.eg.length>=cap?'Nest full':S.fd<eggCost()?'Need food':Math.ceil(S.lay)+'s';
  $('feed').style.display='none';
@@ -479,28 +354,279 @@ _ui=function(){var pop=S.w+S.fo+S.so,cap=CAPS[S.tier],gap=layGap();
  var nt=T[S.tier+1],tb=$('tierbtn');
  if(nt){tb.innerHTML='<span><b>Dig a '+nt.n+'</b><span class="mute">Needs '+TP[S.tier+1]+' ants and '+TF[S.tier+1]+' food. Room for '+CAPS[S.tier+1]+' ants and a new chamber.</span></span>';tb.disabled=pop<TP[S.tier+1]||S.fd<TF[S.tier+1]}
  else{tb.innerHTML='<span><b>Fully dug</b><span class="mute">Take a royal flight to start stronger.</span></span>';tb.disabled=true}
- $('r-so').innerHTML='<span><b>More soldiers</b><span class="mute">Soldiers are '+S.rs+'% of the workforce. They fight invaders.</span></span><span class="r">+10%</span>';
- $('r-fo').innerHTML='<span><b>More foragers</b><span class="mute">Foragers are '+(100-S.rs)+'% of the workforce. They bring the food that eggs need.</span></span><span class="r">+10%</span>';
  U.forEach(function(u){var el=$('u-'+u.id);if(S.up[u.id]){el.style.display='none';return}el.style.display='';el.innerHTML='<span><b>'+u.n+'</b><span class="mute">'+u.d+'</span></span><span class="r">'+u.c+' food</span>';el.disabled=S.fd<u.c});
  var g=gain();$('prinfo').textContent='A new queen restarts your colony. You keep legacy, which strengthens every future colony. Legacy to spend: '+P.lp+'.';
  fly.innerHTML='<span><b>Royal flight</b><span class="mute">'+(g>=1?'Found a new colony and earn '+g+' legacy.':'Dig out an Anthill to unlock royal flights.')+'</span></span>';fly.disabled=g<1;
- LG.forEach(function(l){var el=$('l-'+l.id),lv=pk(l.id),c=(lv+1)*2;el.innerHTML='<span><b>'+l.n+' '+lv+'/5</b><span class="mute">'+l.d+'</span></span><span class="r">'+(lv>=5?'Maxed':c+' legacy')+'</span>';el.disabled=lv>=5||P.lp<c})};
+ LG.forEach(function(l){var el=$('l-'+l.id),lv=pk(l.id),c=(lv+1)*2;el.innerHTML='<span><b>'+l.n+' '+lv+'/5</b><span class="mute">'+l.d+'</span></span><span class="r">'+(lv>=5?'Maxed':c+' legacy')+'</span>';el.disabled=lv>=5||P.lp<c})}
+var _nr0=newRun;newRun=function(lp){_nr0(lp);S.w+=pk('found');sync()};
+/* ---------- FOUR CLASSES, RANDOM EGGS, INJURIES, SCOUTS, SUPER SOLDIER ---------- */
+var GOLD=1/5000,CW=[35,35,17,13],CN=['Nurse','Forager','Soldier','Scout','Super Soldier'],CC=['#f2a6c1','#6fbf4a','#d9452b','#4aa8d8','#ffd23f'],KD=[4,5,1,6,7],SZ=[3.4,3.6,4.8,3.6,8.5];
+var RD=['Tend the eggs and heal injured ants (about one every 9 seconds each).','Carry food home through the tunnel. Eggs and upgrades all need it.','Guard the tunnel mouth and fight invaders. 3 damage per second.','Explore side tunnels for food caches, warn you about waves and speed up digging.','Hatched from a golden egg. Fights like 10 soldiers.'];
+$('bl').textContent='';for(var ri=0;ri<6;ri++)card($('bl'),'ro-'+ri,(function(i){return function(){upgClass(i)}})(ri));
+$('j0').onclick=function(){camT=0;follow=performance.now()+8000};
+$('j1').onclick=function(){var y=foes.length?at(foes[0].p).y:at(.2).y;camT=Math.max(0,Math.min(WH-H,y-H/2));follow=performance.now()+8000};
+$('j2').onclick=function(){camT=WH-H;follow=performance.now()+8000};
+function fresh(){return {a:0,tot:0,cnt:{},up:{},tier:0,dg:0,fd:8,st:1,fed:0,hp:100,wv:0,t:Date.now(),seed:(Math.random()*4e9)>>>0,nb:0,bg:[],w:1,fo:2,so:1,sc:1,sup:0,ij:[0,0,0,0,0],eg:[],lay:8,kt:5,it:2,hc:0,cl:[0,0,0,0,0],ql:0,jl:0}}
+function cnt(c){return [S.w,S.fo,S.so,S.sc,S.sup][c]}
+function addc(c,d){if(c===0)S.w+=d;else if(c===1)S.fo+=d;else if(c===2)S.so+=d;else if(c===3)S.sc+=d;else S.sup+=d}
+function popn(){return S.w+S.fo+S.so+S.sc+S.sup}
+function healthy(c){return Math.max(0,cnt(c)-S.ij[c])}
+function injN(){return S.ij[0]+S.ij[1]+S.ij[2]+S.ij[3]+S.ij[4]}
+function rollClass(){if(Math.random()<GOLD)return 4;var r=Math.random()*100,a=0;for(var i=0;i<4;i++){a+=CW[i];if(r<a)return i}return 0}
+function dps(){return (healthy(2)*3*um('soldier')*(1+.25*S.cl[2])+healthy(4)*30*um('soldier')*(1+.25*S.cl[4])+(healthy(0)+healthy(1)+healthy(3))*.3)*(1+.15*pk('hardy'))*(S.tier>=3?1.15:1)}
+function digRate(){var p=popn();return p>=5?.0035*p*um('dig')*(1+.5*pk('swift'))*(1+Math.min(1,.2*S.sc))*(1+.2*S.cl[3]):0}
+function deposit(){S.fd=Math.min(foodCap(),S.fd+leaf()*healthy(1)/Math.max(1,Math.min(120,S.fo)));ph1=Math.min(1,ph1+.06)}
+function infPos(){return {x:QX-20,y:QY+58+S.tier*2}}
+function slotPos(i){var p=infPos();return {x:p.x+((i%6)-2.5)*7,y:p.y+Math.floor(i/6)*6-3}}
+function unInj(m){m.rt=0;m.inj=0;m.p=1;m.d=-1;m.st=0}
+function hatch(p,e){var c=e.c==null?rollClass():e.c;addc(c,1);S.tot++;pulse=.6;burst(p.x,p.y,c===4?45:8,[CC[c],'#fff6d8','#ffd35a'],c===4?130:50);tn(800+c*120,.06,'triangle',.06);
+ if(c===4){gainJelly(10);flash=.8;pulseRing('255,210,60');pulseRing('255,255,255');shake=.5;SFX.win();toast('A Golden Egg hatched! A Super Soldier joins your colony.')}sync()}
+function kill(){var c=[S.w,S.fo,S.so,S.sc,S.sup*.3],t=0,k=0;c.forEach(function(x){t+=x});if(t<=0)return;var r=Math.random()*t;while(k<4&&r>=c[k]){r-=c[k];k++}
+ addc(k,-1);if(S.ij[k]>cnt(k))S.ij[k]=Math.max(0,cnt(k));SFX.hit();fx.push({x:QX,y:QY-20,vx:0,vy:-20,l:.8,t:'\ud83d\udc80',f:14,g:0});sync()}
+function injure(){var h=[healthy(2)*3,healthy(4)*.6,healthy(1),healthy(3)],ks=[2,4,1,3],t=h[0]+h[1]+h[2]+h[3];if(t<=0){kill();return}
+ var r=Math.random()*t,i=0;while(i<3&&r>=h[i]){r-=h[i];i++}S.ij[ks[i]]++;SFX.hit();sync()}
+function healOne(){var o=[4,2,1,3,0],k,i,m=null;
+ for(i=0;i<5&&!m;i++){k=o[i];marchers.forEach(function(x){if(!m&&x.k===k&&x.inj&&x.st===2&&x.rt>=3)m=x})}
+ if(!m){var vis=0;marchers.forEach(function(x){if(x.inj)vis++});if(vis)return false;
+  for(i=0;i<5;i++)if(S.ij[o[i]]>0){S.ij[o[i]]--;return true}return false}
+ S.ij[m.k]--;var px=m.px,py=m.py;unInj(m);fx.push({x:px,y:py-6,vx:0,vy:-24,l:.9,t:'+',f:16,c:'#7ee08a',g:0});burst(px,py,5,['#7ee08a','#fff'],35);return true}
+function sync(){var c=[S.w,S.fo,S.so,S.sc,S.sup],cap=[1e9,1e9,1e9,1e9,1e9],have=[0,0,0,0,0],k,i;
+ marchers.forEach(function(m){have[m.k]++});
+ for(k=0;k<5;k++){var want=Math.min(cap[k],c[k]);
+  while(have[k]<want){marchers.push({k:k,p:1,d:-1,l:Math.random()*2-1,v:.8+Math.random()*.4,ph:Math.random()*6,sd:Math.random()<.5?1:-1,s:Math.random(),fi:Math.floor(Math.random()*8),px:QX,py:QY});have[k]++}
+  while(have[k]>want){for(i=marchers.length-1;i>=0;i--)if(marchers[i].k===k&&!marchers[i].inj){marchers.splice(i,1);break}have[k]--}}
+ for(k=0;k<5;k++){var inj=0;for(i=0;i<marchers.length;i++)if(marchers[i].k===k&&marchers[i].inj)inj++;var w2=Math.min(S.ij[k],have[k]);
+  while(inj<w2){for(i=0;i<marchers.length;i++)if(marchers[i].k===k&&!marchers[i].inj){var m=marchers[i];m.inj=1;m.st=0;m.q=null;m.d=1;break}inj++}
+  while(inj>w2){for(i=0;i<marchers.length;i++)if(marchers[i].k===k&&marchers[i].inj){unInj(marchers[i]);break}inj--}}
+ S.cnt.nurse=0;S.cnt.forager=S.fo;S.cnt.soldier=S.so-S.ij[2]}
+function dig(){var n=T[S.tier+1];if(!n||popn()<TP[S.tier+1]||S.fd<TF[S.tier+1])return;S.fd-=TF[S.tier+1];S.tier++;SFX.win();toast('Your nest is now a '+n.n+'. Room for '+CAPS[S.tier]+' ants.')}
+function moveArmy(dt,t){var lo=1-S.dg,slot=0,nid=0,ni=injN(),tend=Math.min(ni*2,Math.max(1,Math.ceil(S.w/3))),injPos=[];
+ marchers.forEach(function(m){if(m.inj){if(m.st===0){var a0=at(m.p);injPos.push({x:a0.x,y:a0.y})}else injPos.push({x:m.px,y:m.py})}});
+ marchers.forEach(function(m){var k=m.k;
+  if(m.inj){if(m.st===0){m.p=Math.min(1,m.p+dt*.25);if(m.p>=1){m.st=1;m.px=QX;m.py=QY}}
+   else{var s=slotPos(slot++);m.px+=(s.x-m.px)*Math.min(1,dt*2.5);m.py+=(s.y-m.py)*Math.min(1,dt*2.5);m.st=Math.hypot(s.x-m.px,s.y-m.py)<1.2?2:1}m.rt=m.st===2?(m.rt||0)+dt:0;return}
+  if(k===0){var tx,ty;
+   if(nid<tend&&injPos.length){var tg=injPos[nid%injPos.length];tx=tg.x+(nid%2?-4:4);ty=tg.y-4;m.tend=0}
+   else if(S.eg.length&&(m.ph*7)%1<.55){if(!m.eg||m.eg.t0<t)m.eg={i:Math.floor(Math.random()*S.eg.length),t0:t+3+Math.random()*3};var ep=eggPos(Math.min(m.eg.i,S.eg.length-1));tx=ep.x-3;ty=ep.y-4;m.tend=1}
+   else{m.tend=0;tx=QX+Math.sin(t*.5+m.ph*3)*(44+S.tier*4);ty=QY-6+Math.cos(t*.43+m.ph*2)*(22+S.tier)}
+   var dx=tx-m.px,dy=ty-m.py;if(Math.hypot(dx,dy)>1.5)m.ang=Math.atan2(dy,dx);var sp=Math.min(1,dt*1.1);m.px+=dx*sp;m.py+=dy*sp;nid++;return}
+  if(k===3&&S.nb>0&&S.dg>=1){if(m.q==null||m.q>=S.nb){m.q=Math.floor(Math.random()*S.nb);m.s=Math.random()}
+   if(m.pz>0){m.pz-=dt;return}if(Math.random()<dt*.12)m.pz=1.5;
+   var pr=S.bg[m.q]==null?1:S.bg[m.q];m.s+=m.sd*dt*.07;
+   if(m.s>1){m.s=1;m.sd=-1;if(pr>=1&&performance.now()>(m.cool||0)){m.cool=performance.now()+45000;discover(m.q)}}
+   else if(m.s<0){m.s=0;m.sd=1;m.q=Math.floor(Math.random()*S.nb)}return}
+  if(k===1){if(m.pz>0){m.pz-=dt;m.p=1;m.d=-1}else if(m.p>=.997&&S.dg>=1&&!m.pzd){m.pz=.8;m.pzd=1}else if(m.p<.9)m.pzd=0}
+  if(k===2||k===4){if(foes.length){var fo=foes[m.fi%foes.length];m.p+=(fo.p-m.p)*Math.min(1,dt*1.4);m.d=fo.p>m.p?1:-1}else{var post=lo+.03+((m.fi*.0373+m.ph*.01)%.25);m.sp=(m.sp||0)-dt;if(m.sp<=0){m.sp=3+Math.random()*5;m.mode=Math.random()<.35?1:0}
+   var d2=post-m.p;if(m.mode===1){m.p=post+Math.sin(t*9+m.ph)*.004;m.d=Math.sin(t*9+m.ph)>0?1:-1}else if(Math.abs(d2)>.004){m.p+=Math.sign(d2)*dt*.05;m.d=d2>0?1:-1}else{m.d=-1;m.p=post}}}})}
+function colony(dt){if(dead)return;
+ S.st=1;S.fed=0;S.cnt.soldier=S.so-S.ij[2];S.cnt.forager=S.fo;
+ var pop=popn(),cap=CAPS[S.tier],i,t=performance.now()*.001;
+ digging=S.dg<1&&pop>=5;
+ S.fd=Math.max(0,S.fd-pop*.01*(S.tier>=1?.7:1)*dt);
+ if(S.fd<=0&&pop>0){S.sv=(S.sv||0)+dt;if(S.sv>10){S.sv=0;kill();toast('The colony is starving. You need more foragers.')}}else S.sv=0;
+ S.lay-=dt;
+ if(S.lay<=0){var room=cap-pop-S.eg.length,n=Math.min(clutch(),room,Math.floor(S.fd/eggCost()));
+  if(n>0){S.fd-=n*eggCost();for(i=0;i<n;i++)S.eg.push({t:18*um('hatch')*(1-.06*S.cl[0])*(S.tier>=2?.85:1)*(.9+Math.random()*.3),b:performance.now(),c:rollClass()});S.lay=layGap();pulse=1;SFX.lay();
+   fx.push({x:QX-34,y:QY+2,vx:-20,vy:-20,l:.9,t:'\ud83e\udd5a',f:10,g:140})}else S.lay=0}
+ for(i=S.eg.length-1;i>=0;i--){var e=S.eg[i];e.t-=dt;if(e.t<=0){var p=eggPos(i);S.eg.splice(i,1);hatch(p,e)}}
+ S.hc=(S.hc||0)+dt*Math.min(8,healthy(0))/9*(um('heal'))*(1+.15*S.cl[0]);
+ if(!injN())S.hc=Math.min(S.hc,1);else if(S.hc>=1&&healOne())S.hc-=1;else S.hc=Math.min(S.hc,1.5);
+ var eng=foes.filter(function(f){return f.p>.05}).length;
+ if(eng){S.it-=dt;if(S.it<=0){S.it=4/eng;if(Math.random()<.75*um('armor'))injure()}}
+ var nr=foes.filter(function(f){return f.p>=.9}).length;if(nr){S.kt-=dt;if(S.kt<=0){S.kt=6/nr;if(Math.random()<um('armor'))kill()}}
+ moveArmy(dt,t);
+ if(pop===0&&!S.eg.length)lose()}
+function poll(){var n=0;while(n<MSD.length&&S.tot>=MSD[n][0])n++;if(n>(S.ms||0)){S.ms=n;celebrate(MSD[n-1][1])}
+ var nt=T[S.tier+1],f=nt?Math.min(1,popn()/TP[S.tier+1],S.fd/TF[S.tier+1]):1;$('tpb').style.width=(f*100)+'%';$('tpl').textContent=nt?'Next nest: '+nt.n+' ('+Math.floor(f*100)+'%)':'Fully dug'}
+function hudClasses(){var pop=popn(),ij=injN(),i;var rt='';for(i=0;i<4;i++)rt+=(S.tier>i?'\u2714 ':'\ud83d\udd12 ')+ROOMS[i].n+': '+ROOMS[i].b+'<br>';$('rooms').innerHTML=rt;$('goal').innerHTML=goalText();
+ $('ants').textContent=pop;
+ var ch='';for(i=0;i<4;i++)ch+='<span class="chip"><i style="background:'+CC[i]+'"></i>'+CN[i]+' '+CW[i]+'%</span>';
+ ch+='<span class="chip gold"><i style="background:'+CC[4]+'"></i>Golden '+(GOLD*100).toFixed(2)+'% (1 in '+Math.round(1/GOLD)+')</span>';$('chance').innerHTML=ch;
+ $('hint').textContent='Ants '+pop+' of '+CAPS[S.tier]+', eggs '+S.eg.length+'. '+(S.dg<1?'Your ants are digging out. ':'Foragers bring food, soldiers guard the tunnel. ')+(ij?ij+' injured ants are resting. ':'')+'Tap the queen to hurry the next egg.';
+ var nw=Math.ceil((nf-performance.now())/1000);
+ $('tst').innerHTML=S.dg<1?'Your ants are digging up to the surface: <b>'+Math.floor(S.dg*100)+'%</b>':foes.length?'<b>Invaders in the tunnel: '+foes.length+'</b>':(healthy(3)>0&&nw>0?'Scouts report the next wave in about <b>'+nw+'s</b>.':'The tunnel is open. '+(healthy(3)>0?'Scouts are watching.':'Hatch a scout to get warning of waves.'));
+ $('tdf').textContent='Soldiers '+healthy(2)+(S.sup?', super soldiers '+healthy(4):'')+', foragers '+healthy(1)+', scouts '+healthy(3)+'. Defense '+fmt(dps())+' damage per second.';
+ $('tin').textContent=ij?'Injured and recovering: '+ij+'. '+(healthy(0)>0?'Nurses heal one about every '+(9/Math.min(8,healthy(0))).toFixed(1)+'s.':'You have no healthy nurses to heal them!'):'No injured ants.';
+ for(i=0;i<6;i++){var el=$('ro-'+i),q=i===5,lv=q?S.ql:S.cl[i],c=clCost(i);
+ el.innerHTML='<span><b><span style="color:'+(q?'#ffd23f':CC[i])+'">\u25cf</span> '+(q?'The Queen':CN[i]+'s')+' <span class="mute">level '+lv+'/5</span></b><span class="mute">'+RD[i]+' '+(lv>=5?'Fully upgraded.':CE[i])+'</span></span><span class="r"><span class="own">'+(q?'':cnt(i))+'</span>'+(!q&&S.ij[i]?'<br>'+S.ij[i]+' injured':'')+'<br>'+(lv>=5?'Maxed':c+' jelly')+'</span>';
+ el.disabled=lv>=5||S.jl<c;el.style.display=(i===4&&!S.sup)?'none':''}}
 function eggs(now){cx.save();cx.translate(0,-cam);
- S.eg.forEach(function(e,i){var p=eggPos(i),s=Math.min(1,(now-(e.b||0))/400),w=e.t<5?Math.sin(now*.02*(6-e.t))*.35*(1-e.t/5):0;
-  cx.save();cx.translate(p.x,p.y);cx.rotate(w);cx.scale(s*1.3,s*1.3);
-  if(e.t<.8){var o=(.8-e.t)*4;cx.fillStyle='#f4efe0';cx.beginPath();cx.ellipse(0,o,2.8,3.6,0,0,Math.PI);cx.fill();cx.beginPath();cx.ellipse(0,-o,2.8,3.6,0,Math.PI,2*Math.PI);cx.fill();cx.fillStyle='rgba(255,255,200,.85)';cx.beginPath();cx.arc(0,0,2,0,7);cx.fill()}
-  else{cx.fillStyle='#f4efe0';cx.beginPath();cx.ellipse(0,0,2.8,3.6,0,0,7);cx.fill();cx.fillStyle='rgba(255,255,255,.7)';cx.beginPath();cx.ellipse(-.9,-1.2,.8,1.2,0,0,7);cx.fill();
+ S.eg.forEach(function(e,i){var p=eggPos(i),s=Math.min(1,(now-(e.b||0))/400),w=e.t<5?Math.sin(now*.02*(6-e.t))*.35*(1-e.t/5):0,gd=e.c===4,sh=gd?'#ffd23f':'#f4efe0';
+  cx.save();cx.translate(p.x,p.y);cx.rotate(w);cx.scale(s*(gd?1.7:1.3),s*(gd?1.7:1.3));
+  if(gd){cx.save();cx.globalCompositeOperation='lighter';glow(0,0,9,'255,210,60',.5+.3*Math.sin(now*.006));cx.restore()}
+  if(e.t<.8){var o=(.8-e.t)*4;cx.fillStyle=sh;cx.beginPath();cx.ellipse(0,o,2.8,3.6,0,0,Math.PI);cx.fill();cx.beginPath();cx.ellipse(0,-o,2.8,3.6,0,Math.PI,2*Math.PI);cx.fill();cx.fillStyle='rgba(255,255,200,.9)';cx.beginPath();cx.arc(0,0,2,0,7);cx.fill()}
+  else{cx.fillStyle=sh;cx.beginPath();cx.ellipse(0,0,2.8,3.6,0,0,7);cx.fill();cx.fillStyle='rgba(255,255,255,.7)';cx.beginPath();cx.ellipse(-.9,-1.2,.8,1.2,0,0,7);cx.fill();
    if(e.t<2.5){cx.strokeStyle='#7a5636';cx.lineWidth=.5;cx.beginPath();cx.moveTo(-2,-.5);cx.lineTo(-.8,.4);cx.lineTo(.4,-.6);cx.lineTo(1.6,.3);cx.stroke()}}
   cx.restore()});
  cx.restore()}
-var _d3=drawT;drawT=function(now){_d3(now);eggs(now)};
-var _nr0=newRun;newRun=function(lp){_nr0(lp);S.w+=pk('found');sync()};
+function drawArmy(now){cx.save();cx.translate(0,-cam);var tw=7+S.tier,ip=infPos(),ry=36+S.tier*2,i;
+ cx.lineCap='round';cx.strokeStyle='#150c07';cx.lineWidth=12;cx.beginPath();cx.moveTo(ip.x,QY+ry-6);cx.lineTo(ip.x,ip.y);cx.stroke();cx.strokeStyle='#8a6340';cx.lineWidth=8;cx.stroke();
+ chamber(ip.x,ip.y,46,17);cx.fillStyle='#c0392b';cx.fillRect(ip.x-1.2,ip.y-15,2.4,7);cx.fillRect(ip.x-3.6,ip.y-12.8,7.2,2.4);
+ if(injN()&&healthy(0)>0){cx.save();cx.globalCompositeOperation='lighter';glow(ip.x,ip.y,44,'120,255,160',.12+.05*Math.sin(now*.004));cx.restore()}
+ marchers.forEach(function(m){var k=m.k,a,x,y,ang,leaf=false,ph=m.ph;
+  if(m.inj){if(m.st===0){a=at(m.p);var lm=Math.sin(now*.009+m.ph)*.9;x=a.x+a.nx*lm;y=a.y+a.ny*lm;ang=a.ang;ph=m.ph*.5+now*.005}else{x=m.px;y=m.py;ang=Math.PI/2;ph=m.st===2?0:now*.005}}
+  else if(k===0){x=m.px==null?QX:m.px;y=m.py==null?QY:m.py;ang=m.ang||0;if(m.tend)y+=Math.sin(now*.012+m.ph*4)*.5}
+  else if(k===3&&m.q!=null&&S.nb>0&&S.dg>=1&&BP[m.q]){var pr=S.bg[m.q]==null?1:S.bg[m.q];a=at(m.s*pr,BP[m.q]);x=a.x;y=a.y;ang=(m.sd>0?a.ang:a.ang+Math.PI)+(m.pz>0?Math.sin(now*.007+m.ph)*.9:0)}
+  else{a=at(m.p);var o=m.l*tw*.28;x=a.x+a.nx*o;y=a.y+a.ny*o;ang=m.d===1?a.ang:a.ang+Math.PI;leaf=k===1&&m.d===1&&S.dg>=1;
+   if((k===2||k===4)&&foes.length){var f=foes[m.fi%foes.length];if(f&&Math.abs(f.p-m.p)<.06){var b=at(f.p),sz=foeSz(f),g=m.ph*2+now*.0006,r=sz*1.5+Math.max(0,Math.sin(now*.016+m.ph*5))*7;x=b.x+b.nx*f.o+Math.cos(g)*r;y=b.y+b.ny*f.o+Math.sin(g)*r;ang=g+Math.PI}}}
+  if(k===4){cx.save();cx.globalCompositeOperation='lighter';glow(x,y,15,'255,210,60',.45+.2*Math.sin(now*.008+m.ph));cx.restore()}
+  drawAnt(x,y,ang,SZ[k],leaf,ph,KD[k]);
+  if(m.inj){cx.fillStyle='#ff5a4a';cx.beginPath();cx.arc(x,y-3.2,.9,0,7);cx.fill()}});
+ cx.restore()}
+/* ---------- ART PASS: sprites, soil, chambers, creatures ---------- */
+var soilP=null;
+function soilTex(){if(!soilP){var c=document.createElement('canvas');c.width=c.height=96;var g=c.getContext('2d');for(var i=0;i<260;i++){g.fillStyle=Math.random()<.5?'rgba(0,0,0,.18)':'rgba(255,220,170,.07)';g.fillRect(Math.random()*96,Math.random()*96,1+Math.random()*2,1+Math.random()*2)}soilP=cx.createPattern(c,'repeat')}
+ cx.fillStyle=soilP;cx.fillRect(0,0,W,WH);
+ var r=rng(S.seed+3),i,x;
+ for(i=0;i<7;i++){var y=60+i*WH/7+r()*30;cx.fillStyle=i%2?'rgba(0,0,0,.10)':'rgba(255,200,140,.05)';cx.beginPath();cx.moveTo(0,y);for(x=0;x<=W;x+=20)cx.lineTo(x,y+Math.sin(x*.03+i*2)*6);cx.lineTo(W,y+28);for(x=W;x>=0;x-=20)cx.lineTo(x,y+28+Math.sin(x*.02+i)*5);cx.fill()}
+ cx.strokeStyle='rgba(120,85,50,.55)';cx.lineWidth=1.2;for(i=0;i<8;i++){var r0=r()*W,len=30+r()*60;cx.beginPath();cx.moveTo(r0,26);cx.bezierCurveTo(r0+10,26+len*.3,r0-12,26+len*.6,r0+4,26+len);cx.stroke()}
+ for(i=0;i<9;i++){var sx=r()*W,sy=60+r()*(WH-80),sr=3+r()*5;cx.fillStyle='#5b4430';cx.beginPath();cx.ellipse(sx,sy,sr*1.3,sr,r()*3,0,7);cx.fill();cx.fillStyle='rgba(255,230,190,.18)';cx.beginPath();cx.ellipse(sx-sr*.3,sy-sr*.3,sr*.6,sr*.35,0,0,7);cx.fill()}}
+function chamber(x,y,rx,ry,ic){cx.fillStyle='#150c07';cx.beginPath();cx.ellipse(x,y,rx+4,ry+4,0,0,7);cx.fill();cx.fillStyle='#5a3d26';cx.beginPath();cx.ellipse(x,y,rx+1.5,ry+1.5,0,0,7);cx.fill();
+ var g=cx.createRadialGradient(x,y-ry*.3,2,x,y,rx);g.addColorStop(0,'#a07650');g.addColorStop(1,'#6a4a2c');cx.fillStyle=g;cx.beginPath();cx.ellipse(x,y,rx,ry,0,0,7);cx.fill();
+ cx.strokeStyle='rgba(20,10,4,.45)';cx.lineWidth=2;cx.beginPath();cx.ellipse(x,y,rx-1,ry-1,0,Math.PI+.1,2*Math.PI-.1);cx.stroke();
+ cx.fillStyle='rgba(255,230,190,.22)';for(var i=0;i<7;i++){cx.beginPath();cx.arc(x+Math.sin(i*5.1+x)*rx*.7,y+Math.cos(i*3.7+y)*ry*.6,.8+(i%3)*.4,0,7);cx.fill()}
+ if(ic){cx.font='16px serif';cx.textAlign='center';cx.fillStyle='#fff';cx.fillText(ic,x,y+6)}}
+function drawAnt(x,y,ang,sz,leaf,ph,kd){cx.save();cx.translate(x,y);cx.rotate(ang);
+ if(kd===3){queen(sz/Math.sqrt(ZM[S.tier]),ph);cx.restore();return}
+ if(K<.68){var u2=sz/3.6*.72;cx.fillStyle=AB[kd]||'#2b1509';cx.beginPath();cx.arc(-u2*.9,0,u2*.95,0,7);cx.fill();cx.fillStyle=kd===7?'#8a5a0a':'#2b1509';cx.beginPath();cx.arc(u2*.9,0,u2*.7,0,7);cx.fill();if(K>=.5){cx.fillStyle='#fff';cx.fillRect(u2*1.2,-u2*.4,.5,.5);cx.fillRect(u2*1.2,u2*.1,.5,.5)}cx.restore();return}
+ var u=sz/3.6*.72,sc=kd===6,so=kd===1||kd===7,ab={1:'#b8341a',4:'#e48cab',5:'#5f9a2e',6:'#2f86cc',7:'#f2b81c'}[kd]||'#2b1509',L=sc?1.5:1.2,j,s;
+ cx.fillStyle='rgba(0,0,0,.22)';cx.beginPath();cx.ellipse(-u*.3,u*.55,u*2.3,u*.9,0,0,7);cx.fill();
+ cx.strokeStyle='#120a05';cx.lineWidth=Math.max(.3,u*.4);cx.lineJoin='round';cx.beginPath();
+ for(j=-1;j<=1;j++){s=Math.sin(ph+j*2.1)*u*.45;var bx=j*u*.55+u*.1;
+  cx.moveTo(bx,0);cx.lineTo(bx+u*.5+s,u*L);cx.lineTo(bx+u*.2+s*1.6,u*L*1.7);
+  cx.moveTo(bx,0);cx.lineTo(bx+u*.5-s,-u*L);cx.lineTo(bx+u*.2-s*1.6,-u*L*1.7)}
+ var aw=Math.sin(ph*.5)*u*.3;cx.moveTo(u*1.5,-u*.3);cx.lineTo(u*2.3,-u*.9+aw);cx.lineTo(u*2.9,-u*.6+aw);cx.moveTo(u*1.5,u*.3);cx.lineTo(u*2.3,u*.9-aw);cx.lineTo(u*2.9,u*.6-aw);cx.stroke();
+ cx.fillStyle=ab;cx.beginPath();cx.ellipse(-u*1.35,0,u*(sc?.95:.9),u*(sc?.62:.78),0,0,7);cx.fill();
+ cx.fillStyle='rgba(255,255,255,.28)';cx.beginPath();cx.ellipse(-u*1.5,-u*.28,u*.5,u*.2,0,0,7);cx.fill();
+ if(kd===4){cx.strokeStyle='rgba(255,255,255,.9)';cx.lineWidth=u*.3;cx.beginPath();cx.moveTo(-u*1.3,-u*.7);cx.lineTo(-u*1.3,u*.7);cx.stroke()}
+ if(so){cx.strokeStyle='rgba(20,5,2,.7)';cx.lineWidth=u*.22;cx.beginPath();cx.moveTo(-u*1.6,-u*.6);cx.lineTo(-u*1.6,u*.6);cx.moveTo(-u*1.1,-u*.65);cx.lineTo(-u*1.1,u*.65);cx.stroke()}
+ if(kd===7){cx.fillStyle='#8a5a0a';for(j=0;j<3;j++){cx.beginPath();cx.moveTo(-u*(1.9-j*.6),-u*.7);cx.lineTo(-u*(1.6-j*.6),-u*1.5);cx.lineTo(-u*(1.3-j*.6),-u*.7);cx.fill()}}
+ cx.fillStyle=kd===7?'#8a5a0a':'#2b1509';cx.beginPath();cx.ellipse(0,0,u*.62,u*.46,0,0,7);cx.fill();
+ cx.fillStyle='rgba(255,255,255,.12)';cx.beginPath();cx.ellipse(-u*.1,-u*.18,u*.35,u*.14,0,0,7);cx.fill();
+ cx.fillStyle=so?'#3a0f08':'#2b1509';cx.beginPath();cx.ellipse(u*1.2,0,u*(so?.9:.65),u*(so?.78:.58),0,0,7);cx.fill();
+ if(so){cx.strokeStyle='#e8d9c0';cx.lineWidth=u*.28;cx.beginPath();cx.moveTo(u*1.9,-u*.25);cx.lineTo(u*2.5,-u*.65);cx.moveTo(u*1.9,u*.25);cx.lineTo(u*2.5,u*.65);cx.stroke()}
+ cx.fillStyle='#fff';var er=Math.max(.26,u*.2);cx.beginPath();cx.arc(u*1.45,-u*.32,er,0,7);cx.fill();cx.beginPath();cx.arc(u*1.45,u*.32,er,0,7);cx.fill();
+ if(kd===7){cx.fillStyle='#ffd23f';cx.beginPath();cx.moveTo(u*.8,-u*.55);cx.lineTo(u*.9,-u*1.2);cx.lineTo(u*1.1,-u*.85);cx.lineTo(u*1.3,-u*1.3);cx.lineTo(u*1.5,-u*.85);cx.lineTo(u*1.7,-u*1.2);cx.lineTo(u*1.7,-u*.55);cx.fill()}
+ if(leaf){cx.save();cx.translate(u*2.6,0);cx.rotate(.3);cx.fillStyle='#6fbf4a';cx.beginPath();cx.ellipse(0,0,u*1.3,u*.8,0,0,7);cx.fill();cx.strokeStyle='#3d7a26';cx.lineWidth=u*.14;cx.beginPath();cx.moveTo(-u*1.2,0);cx.lineTo(u*1.2,0);cx.stroke();cx.restore()}
+ cx.restore()}
+function drawFoe(x,y,ang,sz,tp,ph){cx.save();cx.translate(x,y);cx.rotate(ang);var j,n,L,w,o;cx.lineJoin='round';
+ cx.fillStyle='rgba(0,0,0,.28)';cx.beginPath();cx.ellipse(0,sz*.35,sz*1.8,sz*.8,0,0,7);cx.fill();
+ if(tp===2){var wf=Math.sin(ph*3)*.35;cx.fillStyle='rgba(235,245,255,.55)';cx.strokeStyle='rgba(120,140,170,.7)';cx.lineWidth=.5;
+  [-1,1].forEach(function(sd){cx.save();cx.rotate(sd*(.5-wf));cx.beginPath();cx.ellipse(-sz*.2,sd*sz*.9,sz*1.3,sz*.4,0,0,7);cx.fill();cx.stroke();cx.beginPath();cx.moveTo(-sz*1.2,sd*sz*.9);cx.lineTo(sz*.8,sd*sz*.9);cx.stroke();cx.restore()});
+  cx.strokeStyle='#2a1a05';cx.lineWidth=1;cx.beginPath();for(j=0;j<3;j++){cx.moveTo(sz*(.2-j*.4),0);cx.lineTo(sz*(.1-j*.4)+Math.sin(ph+j)*2,sz*.9);cx.moveTo(sz*(.2-j*.4),0);cx.lineTo(sz*(.1-j*.4)-Math.sin(ph+j)*2,-sz*.9)}cx.stroke();
+  cx.fillStyle='#f0b820';cx.beginPath();cx.ellipse(-sz*.8,0,sz*1.1,sz*.62,0,0,7);cx.fill();
+  cx.strokeStyle='#1a1205';cx.lineWidth=2;cx.beginPath();for(j=0;j<3;j++){cx.moveTo(-sz*(1.2-j*.4),-sz*.55);cx.lineTo(-sz*(1.2-j*.4),sz*.55)}cx.moveTo(-sz*1.9,0);cx.lineTo(-sz*2.5,0);cx.stroke();
+  cx.fillStyle='rgba(255,255,255,.3)';cx.beginPath();cx.ellipse(-sz*.8,-sz*.3,sz*.6,sz*.14,0,0,7);cx.fill();
+  cx.fillStyle='#2a1a05';cx.beginPath();cx.ellipse(sz*.1,0,sz*.5,sz*.42,0,0,7);cx.fill();cx.fillStyle='#d9a014';cx.beginPath();cx.arc(sz*.8,0,sz*.45,0,7);cx.fill();
+  cx.fillStyle='#1a0f05';cx.beginPath();cx.ellipse(sz*.9,-sz*.25,sz*.2,sz*.28,0,0,7);cx.ellipse(sz*.9,sz*.25,sz*.2,sz*.28,0,0,7);cx.fill();cx.fillStyle='#fff';cx.fillRect(sz*.9,-sz*.32,1,1);cx.fillRect(sz*.9,sz*.2,1,1);cx.restore();return}
+ var sp=tp===1;n=sp?4:3;L=sz*(sp?1.7:1.2);cx.strokeStyle='#0c0705';cx.lineWidth=sp?1.2:1.8;cx.beginPath();
+ for(j=0;j<n;j++){o=(j-(n-1)/2)*sz*.55;w=Math.sin(ph+j*1.7)*sz*.25;
+  cx.moveTo(o,0);cx.lineTo(o+w+sz*.3,L*.6);cx.lineTo(o+w+sz*.1,L);cx.moveTo(o,0);cx.lineTo(o-w+sz*.3,-L*.6);cx.lineTo(o-w+sz*.1,-L)}cx.stroke();
+ if(sp){cx.fillStyle='#3f2447';cx.beginPath();cx.ellipse(-sz*.8,0,sz,sz*.8,0,0,7);cx.fill();cx.fillStyle='#d83a2e';cx.beginPath();cx.moveTo(-sz*1.1,-sz*.35);cx.lineTo(-sz*.5,0);cx.lineTo(-sz*1.1,sz*.35);cx.moveTo(-sz*1.4,-sz*.3);cx.lineTo(-sz*1.9,0);cx.lineTo(-sz*1.4,sz*.3);cx.fill();
+  cx.fillStyle='rgba(255,255,255,.12)';cx.beginPath();cx.ellipse(-sz*.9,-sz*.4,sz*.5,sz*.15,0,0,7);cx.fill();
+  cx.fillStyle='#2f1a36';cx.beginPath();cx.arc(sz*.5,0,sz*.52,0,7);cx.fill();cx.fillStyle='#ff4a3a';for(j=0;j<4;j++){cx.beginPath();cx.arc(sz*.85,(j-1.5)*sz*.16,Math.max(.7,sz*.08),0,7);cx.fill()}
+  cx.strokeStyle='#e8d9c0';cx.lineWidth=1;cx.beginPath();cx.moveTo(sz*1,-sz*.15);cx.lineTo(sz*1.3,-sz*.25);cx.moveTo(sz*1,sz*.15);cx.lineTo(sz*1.3,sz*.25);cx.stroke()}
+ else{cx.fillStyle='#2c4670';cx.beginPath();cx.ellipse(-sz*.3,0,sz*1.3,sz*.95,0,0,7);cx.fill();cx.fillStyle='rgba(160,200,255,.3)';cx.beginPath();cx.ellipse(-sz*.5,-sz*.4,sz*.8,sz*.22,-.1,0,7);cx.fill();
+  cx.strokeStyle='#6f8fc4';cx.lineWidth=1;cx.beginPath();cx.moveTo(-sz*1.5,0);cx.lineTo(sz*.8,0);for(j=0;j<3;j++){cx.moveTo(-sz*(1.1-j*.5),-sz*.8);cx.quadraticCurveTo(-sz*(1.3-j*.5),0,-sz*(1.1-j*.5),sz*.8)}cx.stroke();
+  cx.fillStyle='#223654';cx.beginPath();cx.ellipse(sz*.95,0,sz*.5,sz*.55,0,0,7);cx.fill();cx.fillStyle='#16223a';cx.beginPath();cx.ellipse(sz*1.45,0,sz*.45,sz*.42,0,0,7);cx.fill();
+  cx.fillStyle='#fff';cx.beginPath();cx.arc(sz*1.6,-sz*.28,Math.max(.8,sz*.1),0,7);cx.arc(sz*1.6,sz*.28,Math.max(.8,sz*.1),0,7);cx.fill();
+  cx.strokeStyle='#0e1626';cx.lineWidth=2.2;cx.beginPath();cx.moveTo(sz*1.8,-sz*.2);cx.quadraticCurveTo(sz*2.6,-sz*.7,sz*2.5,-sz*.1);cx.moveTo(sz*1.8,sz*.2);cx.quadraticCurveTo(sz*2.6,sz*.7,sz*2.5,sz*.1);cx.stroke()}
+ cx.restore()}
+function deco(now){cx.save();cx.translate(0,-cam);
+ if(cam<40){cx.save();cx.globalCompositeOperation='lighter';glow(W*.84,6,34,'255,238,160',.5);cx.restore();cx.fillStyle='#fff6c4';cx.beginPath();cx.arc(W*.84,6,5,0,7);cx.fill();
+  cx.strokeStyle='#26221c';cx.lineWidth=.8;for(var i=0;i<2;i++){var bx=(now*.018*(i+1)+i*150)%(W+80)-40,by=9+Math.sin(now*.003+i*2)*3,fl=Math.sin(now*.02+i)*2;cx.beginPath();cx.moveTo(bx-3,by-fl);cx.lineTo(bx,by);cx.lineTo(bx+3,by-fl);cx.stroke()}}
+ S.eg.forEach(function(e,i){if(e.c!==4)return;var p=eggPos(i);for(var k=0;k<4;k++){var a=now*.003+k*1.57,r=5+Math.sin(now*.01+k)*1.5,sx=p.x+Math.cos(a)*r,sy=p.y+Math.sin(a)*r,tw2=.5+.5*Math.sin(now*.012+k*2);cx.fillStyle='rgba(255,240,170,'+tw2+')';cx.fillRect(sx-.5,sy-1.5,1,3);cx.fillRect(sx-1.5,sy-.5,3,1)}});
+ cx.restore()}
+var _nr0b=newRun;
 var _nr=newRun;newRun=function(lp){_nr(lp);sizeT();bants.length=0;nbt=25};
 var _go=go;go=function(t){_go(t);cv.style.touchAction=t==='tun'?'none':'manipulation'};
 cv.addEventListener('pointerdown',function(e){if(tab==='tun'){dy0=e.clientY;try{cv.setPointerCapture(e.pointerId)}catch(x){}}});
 cv.addEventListener('pointermove',function(e){if(dy0!=null&&tab==='tun'){camT=Math.max(0,Math.min(WH-H,camT-(e.clientY-dy0)/K));dy0=e.clientY;follow=performance.now()+5000}});
 cv.addEventListener('pointerup',function(){dy0=null});cv.addEventListener('pointercancel',function(){dy0=null});
+/* ===== v3: zoom-out, one ant per ant, jelly upgrades, new queen ===== */
+var ZM=[1,.82,.64,.5,.4],CL=[1,1,2,4,8],AB={1:'#b8341a',4:'#e48cab',5:'#5f9a2e',6:'#2f86cc',7:'#f2b81c'};
+var CE=['Next: +15% healing speed, 6% faster hatching.','Next: +20% food per leaf.','Next: +25% damage.','Next: faster digging and bigger food finds.','Next: +25% damage.','Next: lays 7% sooner and +20 health.'];
+RD.push('Her egg-laying and health. Lays more eggs at levels 3 and 5.');
+function hpMax(){return 100+20*S.ql}
+function clutch(){return Math.round(CL[S.tier]*um('clutch'))+(S.ql>=3?1:0)+(S.ql>=5?1:0)}
+function gainJelly(n){S.jl+=n;fx.push({x:QX,y:QY-48,vx:0,vy:-18,l:1.4,t:'+'+n+' jelly',f:13,c:'#ffd23f',g:0})}
+function clCost(i){return Math.ceil(2*Math.pow(1.7,i===5?S.ql:S.cl[i]))}
+function upgClass(i){var q=i===5,lv=q?S.ql:S.cl[i];if(lv>=5||S.jl<clCost(i))return;S.jl-=clCost(i);if(q)S.ql++;else S.cl[i]++;SFX.buy();burst(QX,QY,16,[q?'#ffd23f':CC[i],'#fff'],80);toast((q?'The Queen':CN[i]+'s')+' reached level '+(lv+1)+'.')}
+function drawT(now){drawWorld(now);drawTrails(now);drawBants(now);drawRooms(now);lighting(now);eggs(now);drawArmy(now);deco(now)}
+function extra(dt){branches(dt);poll();colony(dt)}
+function queen(s,ph){var br=1+Math.sin(ph*.5)*.03+pulse*.08,j,i,g;
+ cx.fillStyle='rgba(0,0,0,.3)';cx.beginPath();cx.ellipse(-s*.3,s*.85,s*2.3,s*.5,0,0,7);cx.fill();
+ cx.fillStyle='rgba(150,25,40,.88)';cx.strokeStyle='#e0b84a';cx.lineWidth=s*.05;cx.beginPath();cx.moveTo(s*.45,-s*.42);cx.bezierCurveTo(-s*.6,-s*1.35,-s*2.4,-s,-s*2.5,-s*.1);cx.bezierCurveTo(-s*2.4,s,-s*.6,s*1.35,s*.45,s*.42);cx.closePath();cx.fill();cx.stroke();
+ cx.strokeStyle='#1a0c05';cx.lineWidth=s*.09;cx.lineJoin='round';cx.lineCap='round';cx.beginPath();
+ for(j=-1;j<=1;j++){var w=Math.sin(ph+j*2)*s*.07,x0=s*.15+j*s*.42;[1,-1].forEach(function(sd){cx.moveTo(x0,0);cx.lineTo(x0+j*s*.25+w,sd*s*.62);cx.lineTo(x0+j*s*.55+w*1.4,sd*s*1.2);cx.lineTo(x0+j*s*.7+w*1.4,sd*s*1.35)})}cx.stroke();
+ g=cx.createRadialGradient(-s*1.2,-s*.4,s*.1,-s,0,s*1.4);g.addColorStop(0,'#c98a52');g.addColorStop(.5,'#8a4f26');g.addColorStop(1,'#3a1c0c');cx.fillStyle=g;cx.beginPath();cx.ellipse(-s*1.05,0,s*1.3*br,s*.82*br,0,0,7);cx.fill();
+ cx.strokeStyle='rgba(30,12,4,.5)';cx.lineWidth=s*.07;for(i=0;i<5;i++){cx.beginPath();cx.ellipse(-s*(.5+i*.28),0,s*.1,s*(.78-i*.1)*br,0,-1.4,1.4);cx.stroke()}
+ cx.fillStyle='rgba(255,235,200,.35)';cx.beginPath();cx.ellipse(-s*1.2,-s*.38,s*.55,s*.14,-.15,0,7);cx.fill();
+ if(pulse>.3){cx.fillStyle='rgba(250,245,230,'+Math.min(1,pulse)+')';cx.beginPath();cx.ellipse(-s*2.4-pulse*s*.4,s*.05,s*.2,s*.26,0,0,7);cx.fill()}
+ cx.fillStyle='rgba(225,238,255,.45)';cx.strokeStyle='rgba(120,140,170,.6)';cx.lineWidth=s*.03;[1,-1].forEach(function(sd){cx.beginPath();cx.ellipse(-s*.3,sd*s*.5,s*.8,s*.2,sd*.35,0,7);cx.fill();cx.stroke()});
+ g=cx.createLinearGradient(0,-s*.4,0,s*.4);g.addColorStop(0,'#7a4a24');g.addColorStop(1,'#3a1c0c');cx.fillStyle=g;cx.beginPath();cx.ellipse(s*.25,0,s*.55,s*.42,0,0,7);cx.fill();
+ g=cx.createRadialGradient(s*.85,-s*.15,s*.05,s*.95,0,s*.5);g.addColorStop(0,'#8a5630');g.addColorStop(1,'#3e1f0e');cx.fillStyle=g;cx.beginPath();cx.ellipse(s,0,s*.5,s*.42,0,0,7);cx.fill();
+ [1,-1].forEach(function(sd){cx.fillStyle='#fff';cx.beginPath();cx.ellipse(s*1.12,sd*s*.22,s*.13,s*.15,0,0,7);cx.fill();cx.fillStyle='#120804';cx.beginPath();cx.arc(s*1.15,sd*s*.22,s*.07,0,7);cx.fill();cx.fillStyle='#fff';cx.fillRect(s*1.1,sd*s*.22-s*.1,s*.04,s*.04)});
+ cx.strokeStyle='#1a0c05';cx.lineWidth=s*.07;cx.beginPath();cx.moveTo(s*1.35,-s*.12);cx.quadraticCurveTo(s*1.7,-s*.2,s*1.65,s*.02);cx.moveTo(s*1.35,s*.12);cx.quadraticCurveTo(s*1.7,s*.2,s*1.65,-s*.02);
+ var aw=Math.sin(ph*.7)*s*.08;cx.moveTo(s*1.2,-s*.25);cx.lineTo(s*1.55,-s*.55+aw);cx.lineTo(s*1.85,-s*.45+aw);cx.moveTo(s*1.2,s*.25);cx.lineTo(s*1.55,s*.55-aw);cx.lineTo(s*1.85,s*.45-aw);cx.stroke();
+ cx.fillStyle='#f2c94c';cx.strokeStyle='#8a6a10';cx.lineWidth=s*.04;cx.beginPath();cx.moveTo(s*.7,-s*.38);cx.lineTo(s*.75,-s*.8);cx.lineTo(s*.9,-s*.56);cx.lineTo(s*1.05,-s*.88);cx.lineTo(s*1.2,-s*.56);cx.lineTo(s*1.35,-s*.8);cx.lineTo(s*1.32,-s*.34);cx.closePath();cx.fill();cx.stroke();
+ cx.fillStyle='#e0553f';cx.beginPath();cx.arc(s*1.05,-s*.55,s*.06,0,7);cx.fill();cx.fillStyle='#5fd0ff';cx.beginPath();cx.arc(s*.85,-s*.5,s*.04,0,7);cx.arc(s*1.25,-s*.5,s*.04,0,7);cx.fill()}
+/* ===== v4: living nest - pheromone trails, named chambers, discoveries, flora, queen's court ===== */
+var ph1=0,bph=[],lastTr=0;
+var ROOMS=[{n:'Fungus Garden',b:'colony eats 30% less food'},{n:'Nursery',b:'eggs hatch 15% faster'},{n:'Barracks',b:'soldiers deal 15% more damage'},{n:'Royal Court',b:'the queen lays 10% sooner'}];
+var DN=['Seed stash','Crystal vein','Fungus grove','Ancient relic'],DI=['\ud83c\udf30','\ud83d\udc8e','\ud83c\udf44','\ud83c\udffa'];
+function dType(k){return Math.floor(rng(S.seed+k*131+5)()*4)}
+function discover(k){var t=dType(k),a=at(S.bg[k]==null?1:S.bg[k],BP[k]),f=Math.ceil((2+S.tier*3)*(.6+Math.random())*(1+.3*S.cl[3])),msg='';bph[k]=1;
+ if(t===0)f*=2;if(t===1&&Math.random()<.4){gainJelly(1);msg=' and a gem'}if(t===3){gainJelly(1);msg=' and a relic'}
+ S.fd=Math.min(foodCap(),S.fd+f);fx.push({x:a.x,y:a.y-8,vx:0,vy:-24,l:1.3,t:'+'+f+' food'+msg,f:11,c:'#9be07a',g:0});
+ S.sd=S.sd||{};if(!S.sd[t]){S.sd[t]=1;toast('Scouts found a '+DN[t]+'!')}}
+function drawTrails(now){if(S.dg<.99)return;var dt=Math.min(.1,Math.max(0,(now-lastTr)/1000));lastTr=now;ph1=Math.max(0,ph1-dt*.03);cx.save();cx.translate(0,-cam);
+ var n=Math.max(8,Math.floor(LEN/7)),off=(now*.0004)%1,i,a,k;
+ for(i=0;i<n;i++){a=at((i+off)/n);cx.fillStyle='rgba(190,255,140,'+(.07+.3*ph1)+')';cx.beginPath();cx.arc(a.x,a.y,1+ph1*.6,0,7);cx.fill()}
+ for(k=0;k<S.nb&&k<BP.length;k++){var q=BP[k],pr=S.bg[k]==null?1:S.bg[k],b=bph[k]||0;bph[k]=Math.max(0,b-dt*.015);if(pr<.2)continue;var m2=Math.max(4,Math.floor(q.LEN*pr/7));
+  for(i=0;i<m2;i++){a=at(((i+off)/m2)*pr,q);cx.fillStyle='rgba(120,220,255,'+(.06+.3*b)+')';cx.beginPath();cx.arc(a.x,a.y,1+b*.5,0,7);cx.fill()}}
+ cx.restore()}
+function drawRooms(now){var t=now*.001,i,j;cx.save();cx.translate(0,-cam);
+ for(i=0;i<S.tier&&i<4;i++){var q=PT[CI[i]],x=q[0]+(i%2?-34:34),y=q[1];
+  if(i===0){for(j=0;j<6;j++){var mx=x-17+j*6.8,my=y+4+Math.sin(j*2.1)*3,h=3+(j%3);cx.fillStyle='#cdbfa0';cx.fillRect(mx-.5,my-h,1,h);cx.fillStyle=j%2?'#5fe0d0':'#7fffb0';cx.beginPath();cx.ellipse(mx,my-h,2.4+(j%2),1.6,0,Math.PI,2*Math.PI);cx.fill()}
+   cx.save();cx.globalCompositeOperation='lighter';glow(x,y,26,'90,255,200',.22+.08*Math.sin(t*2));cx.restore()}
+  else if(i===1){cx.strokeStyle='#b8964a';cx.lineWidth=1.2;for(j=0;j<3;j++){var gx=x-12+j*12;cx.beginPath();cx.ellipse(gx,y+4,5,2.6,0,0,7);cx.stroke();cx.fillStyle='#f6f1e2';cx.beginPath();cx.ellipse(gx+Math.sin(t*3+j)*.8,y+3.5,2.3,1.6,0,0,7);cx.fill()}}
+  else if(i===2){cx.fillStyle='#8a6a40';cx.fillRect(x-1,y-12,2,16);cx.fillStyle='#c0392b';cx.beginPath();cx.moveTo(x+1,y-12);cx.lineTo(x+11+Math.sin(t*2)*1.2,y-9);cx.lineTo(x+1,y-5);cx.fill();cx.fillStyle='#8a8a92';cx.beginPath();cx.arc(x-12,y+2,4,0,7);cx.fill();cx.strokeStyle='#cfcfd6';cx.lineWidth=.8;cx.stroke()}
+  else{cx.fillStyle='#d9a82e';cx.fillRect(x-7,y-4,14,9);cx.fillStyle='#f4cf5a';cx.beginPath();cx.moveTo(x-7,y-4);cx.lineTo(x-5,y-12);cx.lineTo(x,y-7);cx.lineTo(x+5,y-12);cx.lineTo(x+7,y-4);cx.fill();cx.save();cx.globalCompositeOperation='lighter';glow(x,y,26,'255,210,90',.2);cx.restore()}
+  var sc=.7/K;cx.font='700 '+(8*sc)+'px system-ui';cx.textAlign='center';cx.fillStyle='rgba(255,245,220,.92)';cx.strokeStyle='rgba(0,0,0,.65)';cx.lineWidth=2*sc;cx.strokeText(ROOMS[i].n,x,y-15*sc);cx.fillText(ROOMS[i].n,x,y-15*sc)}
+ var fl=rng(S.seed+11);
+ for(i=2;i<PT.length-1;i+=2){if(S.dg<1)break;var sd=fl()<.5?-1:1,fx0=PT[i][0]+sd*(10+S.tier),fy0=PT[i][1]+4,gl=.5+.5*Math.sin(t*2+i);
+  for(j=0;j<3;j++){var ox=fx0+j*3.2*sd,hh=2+j;cx.fillStyle='#cfe8d6';cx.fillRect(ox-.4,fy0-hh,.8,hh);cx.fillStyle='rgba(120,255,200,'+(.5+.4*gl)+')';cx.beginPath();cx.arc(ox,fy0-hh,1.3,0,7);cx.fill()}
+  cx.save();cx.globalCompositeOperation='lighter';glow(fx0+3*sd,fy0-3,10,'90,255,200',.2*gl+.1);cx.restore()}
+ [.2,.5,.78].forEach(function(p0,n){if(S.dg<1||p0<1-S.dg)return;var a=at(p0),w=10+S.tier;[1,-1].forEach(function(sd){var rx=a.x+a.nx*sd*w*.75,ry=a.y+a.ny*sd*w*.75;cx.fillStyle='#4a382a';cx.beginPath();cx.ellipse(rx,ry,4.5,3.2,n,0,7);cx.fill();cx.fillStyle='rgba(255,230,190,.18)';cx.beginPath();cx.ellipse(rx-1,ry-1,2.2,1.2,n,0,7);cx.fill()})});
+ cx.restore()}
+function drawCushion(now){var rx=62+S.tier*5,ry=36+S.tier*2,i,x,g=cx.createRadialGradient(QX,QY+2,3,QX,QY+4,rx*.62);g.addColorStop(0,'#b8323c');g.addColorStop(.75,'#7a1a24');g.addColorStop(1,'#4a0e16');
+ cx.fillStyle=g;cx.beginPath();cx.ellipse(QX,QY+5,rx*.62,ry*.62,0,0,7);cx.fill();cx.strokeStyle='#e0b84a';cx.lineWidth=1.4;cx.beginPath();cx.ellipse(QX,QY+5,rx*.62,ry*.62,0,0,7);cx.stroke();
+ cx.fillStyle='#f2c94c';for(i=0;i<14;i++){var a=i/14*6.283;cx.beginPath();cx.arc(QX+Math.cos(a)*rx*.62,QY+5+Math.sin(a)*ry*.62,.9,0,7);cx.fill()}
+ cx.strokeStyle='rgba(90,60,36,.8)';cx.lineWidth=1;for(i=0;i<6;i++){x=QX-rx*.7+i*rx*.28;cx.beginPath();cx.moveTo(x,QY-ry+3);cx.quadraticCurveTo(x+3,QY-ry+10,x-1,QY-ry+16+(i%3)*4);cx.stroke()}
+ cx.fillStyle='rgba(150,230,255,.85)';for(i=0;i<5;i++){var cxp=QX-rx*.8+i*rx*.4,cyp=QY+ry-5-(i%2)*3;cx.beginPath();cx.moveTo(cxp,cyp-5);cx.lineTo(cxp+2,cyp);cx.lineTo(cxp,cyp+2);cx.lineTo(cxp-2,cyp);cx.fill()}
+ cx.save();cx.globalCompositeOperation='lighter';glow(QX,QY,rx*.8,'255,200,110',.1+.04*Math.sin(now*.003));cx.restore()}
+/* ===== v5: beginner help - intro pop-up and current goal ===== */
+var IP=[],ii=0,introWasDead=false;
+function chipRow(a){return a.map(function(i){return '<span class="chip" style="margin:0 6px 6px 0"><i style="background:'+CC[i]+'"></i>'+CN[i]+'</span>'}).join('')}
+IP=['<h3>Welcome to The Colony</h3><p>You are the queen of a brand new ant colony. Your job is to grow it from five ants into a thriving nest.</p><p>Every <b>30 seconds</b> you lay an egg on your own. Tap the queen on the <b>Nest</b> tab to hurry the next one.</p>',
+ '<h3>Four kinds of ant</h3><p>Every egg hatches into one of four ants. It is a random roll, so you get a mix.</p><p>'+chipRow([0,1,2,3])+'</p><p><b>Nurses</b> heal hurt ants and tend eggs. <b>Foragers</b> bring food. <b>Soldiers</b> defend the tunnel. <b>Scouts</b> explore, find treasure and warn you about waves.</p><p>About 1 egg in 5,000 is a <b>golden egg</b> that hatches a mighty Super Soldier. The odds are shown on the Nest tab.</p>',
+ '<h3>Food keeps everything going</h3><p>Foragers carry leaves home through the tunnel. Food is shown at the top right.</p><p>Eggs, upgrades and digging deeper all cost food, and every ant eats a little. With no food, ants starve, so make sure you have foragers.</p>',
+ '<h3>Defend your nest</h3><p>Invaders come down the tunnel in waves. Your soldiers fight them. Hurt ants limp to the infirmary and nurses heal them.</p><p>If invaders reach the queen and her health runs out, the colony falls. Open the <b>Tunnel</b> tab to watch the fights, and use the Surface, Front line and Nest buttons to look around.</p>',
+ '<h3>Grow and upgrade</h3><p>On the <b>Colony</b> tab, dig a bigger nest once you have enough ants and food. Each stage fits more ants, unlocks a named chamber with a bonus and zooms the map out.</p><p><b>Royal jelly</b> comes from cleared waves, bosses and scout finds. Tap an ant class or the queen on the Colony tab to level them up. The <b>Goal</b> line on the Nest tab always tells you what to do next.</p>'];
+function introShow(i){ii=i;$('ipg').innerHTML=IP[i];var d='';for(var k=0;k<IP.length;k++)d+='<i'+(k===i?' class="on"':'')+'></i>';$('idots').innerHTML=d;$('iback').style.visibility=i?'visible':'hidden';$('inext').textContent=i===IP.length-1?'Start playing':'Next'}
+function introOpen(){if($('intro').classList.contains('on'))return;introWasDead=dead;dead=true;$('intro').classList.add('on');introShow(0)}
+function introClose(){$('intro').classList.remove('on');dead=introWasDead;try{localStorage.setItem('thecolony_intro','1')}catch(e){}}
+function goalText(){var nt=T[S.tier+1],pop=popn();
+ if(S.dg<1)return '<b>Goal:</b> your ants are digging the tunnel out to the surface. Keep laying eggs.';
+ if(!S.fo)return '<b>Goal:</b> you have no foragers yet. Keep hatching eggs until one appears.';
+ if(nt)return '<b>Goal:</b> dig a '+nt.n+' on the Colony tab. You have '+pop+' of '+TP[S.tier+1]+' ants and '+Math.floor(Math.min(S.fd,TF[S.tier+1]))+' of '+TF[S.tier+1]+' food.';
+ return '<b>Goal:</b> your nest is fully dug. Level up your ants and the queen with royal jelly.'}
+$('inext').onclick=function(){if(ii>=IP.length-1)introClose();else introShow(ii+1)};
+$('iback').onclick=function(){if(ii>0)introShow(ii-1)};
+$('help').onclick=introOpen;
 load();if(S.hp<=0)S.hp=50;sizeT();sync();ui();
+try{if(!localStorage.getItem('thecolony_intro'))introOpen()}catch(e){introOpen()}
 if(S.tot===0&&S.dg===0)toast('Your first ants are digging up from deep underground. Tap the queen to lay eggs.');
 window.addEventListener('resize',sizeT);requestAnimationFrame(frame);
 </script></body></html>
